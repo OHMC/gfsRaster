@@ -46,14 +46,9 @@ PAR_LIST = ["PRES", "CRAIN", "PRMSL", "RH", "SOILW", "TMP",
 
 # ADDR
 # TEMPLATE
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p25s.pl?file=geavg.t00z.pgrb2s.0p25.f000&all_lev=on
-# &var_CRAIN=on&var_PRES=on&var_PRMSL=on&var_RH=on&var_SOILW=on&var_TMP=on&var_TSOIL=on&var_UGRD=on&var_VGRD=on
-# &var_WEASD=on&leftlon=-96&rightlon=-15&toplat=-10&bottomlat=-75&dir=%2Fgefs.20210218%2F00%2Fatmos%2Fpgrb2sp25
-
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p25s.pl?file=geavg.t00z.pgrb2s.0p25.f003&all_lev=on
-# &var_PRES=on&var_CRAIN=on&var_PRMSL=on&var_RH=on&var_SOILW=on&var_TMP=on&var_UGRD=on&var_VGRD=on
-# &var_WEASD=on&var_TSOIL=on&leftlon=-96&rightlon=-15&bottomlat=-75&toplat=-10
-# &dir=%2Fgefs.20210218%2F00%2Fatmos%2Fpgrb2sp25
+# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p50a.pl?file=gec00.t00z.pgrb2a.0p50.f0&all_lev=on
+# &var_PRES=on&var_CRAIN=on&var_PRMSL=on&var_RH=on&var_SOILW=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on
+# &var_TSOIL=on&var_APCP=on&leftlon=-96&rightlon=-15&bottomlat=-75&toplat=-10&dir=/gefs.20210221/00/atmos/pgrb2ap5
 
 # https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?file=gfs.t00z.pgrb2.0p25.f000&all_lev=on
 # &all_var=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.20210218%2F00
@@ -174,8 +169,11 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
     elif model == "gefs05":
-        hours = np.arange(0, 241, 3).tolist()
-        hours.append(np.arange(246, 841, 6).tolist())
+        #hours = np.arange(0, 241, 3).tolist()
+        #hours.append(np.arange(246, 841, 6).tolist())
+        [f"{i:03}" for i in range(0, 240, 3)]
+        hours = [f"{i:03}" for i in range(0, 241, 3)]
+        hours = hours + [f"{i:03}" for i in range(46, 841, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
