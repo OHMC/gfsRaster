@@ -16,7 +16,7 @@ import requests
 import datetime
 import socket
 import argparse
-
+import numpy as np
 # CONFIGURATION OF GRIB FILTER AND DATE RANGE
 # Domain (limited area) definition (geographical coordinates)
 LON_W = "-96"
@@ -99,7 +99,7 @@ def download_grb_file(url, outfile):
     return 0
 
 
-def get_list_gfs(inidate, model):
+def get_list_gfs(inidate: str, model: str, nhours: str):
     inidate = int(inidate)      # CAST INIT date
     # inidate=int(os.environ['inidate'])
 
@@ -146,41 +146,47 @@ def get_list_gfs(inidate, model):
         PERL_FILTER = "filter_gefs_atmos_0p50a.pl"
         dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2ap5"
 
+    # get list of var to download
+    parameters = ""
+    npar = len(PAR_LIST)
+    for iparam in range(0, npar):
+        parameters = parameters + f"&var_{PAR_LIST[iparam]}=on"
+
     # Full list of requested files
     list_remote_files = []
     list_files_local = []
 
-    for iter_num_file in range(0, int(CANT_FILES_REQUESTED)):
-
-        npar = len(PAR_LIST)
-        parameters = ""
-        for iparam in range(0, npar):
-            parameters = parameters + f"&var_{PAR_LIST[iparam]}=on"
-
-        hf = iter_num_file*DHOUR
-        hfA2 = "%3.3i" % hf
-        # ?file=geavg.t00z.pgrb2s.0p25.f000
-        if model == 'gfs':
+    # for iter_num_file in range(0, int(CANT_FILES_REQUESTED)):
+    path = f"{LEVELS}{parameters}{DOMAIN_PARAMETERS}{dir_gfs_name}"
+    # ?file=geavg.t00z.pgrb2s.0p25.f000
+    if model == 'gfs':
+        hours = np.arange(0, nhours+1, 3).tolist()
+        for hfA2 in hours:
             file_name_base = f"?file=gfs.t{fciA}z.pgrb2.0p25.f{hfA2}"
             local_file = f"GFS_{day}{fciA}+{hfA2}.grib2"
-        elif model == 'gefs':
+            list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
+            list_files_local.append(local_file)
+    elif model == 'gefs':
+        hours = np.arange(0, nhours+1, 3).tolist()
+        for hfA2 in hours:
             file_name_base = f"?file=geavg.t{fciA}z.pgrb2s.0p25.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p25.grib2"
-        elif model == "gefs05":
+            list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
+            list_files_local.append(local_file)
+    elif model == "gefs05":
+        hours = np.arange(0, 241, 3).tolist()
+        hours.append(np.arange(246, 841, 6).tolist())
+        for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
+            list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
+            list_files_local.append(local_file)
 
-        remote_file = (f"{PERL_FILTER}{file_name_base}{LEVELS}"
-                       f"{parameters}{DOMAIN_PARAMETERS}{dir_gfs_name}")
-
-        list_remote_files.append(remote_file)
-        list_files_local.append(local_file)
-
-        print("********************************")
-        print(remote_file)
-        print("********************************")
-        print(local_file)
-        print("********************************")
+    print("********************************")
+    print(list_remote_files)
+    print("********************************")
+    print(list_files_local)
+    print("********************************")
 
     return list_remote_files, list_files_local
 
@@ -343,12 +349,14 @@ def main():
 
     parser.add_argument("--ini", type=int, dest="inidate", help="init date",
                         required=True)
-    parser.add_argument("--output", dest="output", help="directories where \
+    parser.add_argument("--out", dest="output", help="directories where \
                         downloaded files are stored and (optionally) archived",
                         required=True)
-    parser.add_argument("--model", dest="model", help="if its gfs or gefs",
+    parser.add_argument("--model", dest="model", help="if its gfs/gefs/gefs05",
                         required=True)
 
+    parser.add_argument("--nhours", dest="nhours", help="hours of simultation to download",
+                        required=True)
     args = parser.parse_args()
 
     # define options
@@ -357,7 +365,9 @@ def main():
     if not args.inidate or not args.output:
         print("The parameter is required.  Nothing to do!")
     else:
-        list_remote_files, list_files_local = get_list_gfs(args.inidate, args.model)
+        list_remote_files, list_files_local = get_list_gfs(args.inidate,
+                                                           args.model,
+                                                           args.nhours)
         ok = download(args.output, list_remote_files, list_files_local)
 
         if ok:
