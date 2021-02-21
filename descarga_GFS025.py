@@ -24,12 +24,10 @@ LON_E = "-15"
 LAT_N = "-10"
 LAT_S = "-75"
 
-
-
 MODEL = ['gfs', 'gefs']
 
 # Total forecast length (in hours) for which data are requested:
-NHOUR = 16*24  # DIAS POR HORAS
+NHOUR = 35*24  # DIAS POR HORAS
 # Interval in hours between two forecast times:
 DHOUR = 3
 
@@ -137,12 +135,16 @@ def get_list_gfs(inidate, model):
     print("Date and hour of GEFS forecast initial time: ", day, fci)
 
     # dir=%2Fgefs.20210218%2F00%2Fatmos%2Fpgrb2sp25
+    # filter_gefs_atmos_0p50a.pl pgrb2ap5
     if model == 'gfs':
         PERL_FILTER = "filter_gfs_0p25.pl"
         dir_gfs_name = f"&dir=%2Fgfs.{day}%2F{fciA}"
     elif model == 'gefs':
         PERL_FILTER = "filter_gefs_atmos_0p25s.pl"
         dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2sp25"
+    elif model == 'gefs05':
+        PERL_FILTER = "filter_gefs_atmos_0p50a.pl"
+        dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2ap5"
 
     # Full list of requested files
     list_remote_files = []
@@ -163,7 +165,10 @@ def get_list_gfs(inidate, model):
             local_file = f"GFS_{day}{fciA}+{hfA2}.grib2"
         elif model == 'gefs':
             file_name_base = f"?file=geavg.t{fciA}z.pgrb2s.0p25.f{hfA2}"
-            local_file = f"GEFS_{day}{fciA}+{hfA2}.grib2"
+            local_file = f"GEFS_{day}{fciA}+{hfA2}.0p25.grib2"
+        elif model == "gefs05":
+            file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
+            local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
 
         remote_file = (f"{PERL_FILTER}{file_name_base}{LEVELS}"
                        f"{parameters}{DOMAIN_PARAMETERS}{dir_gfs_name}")
