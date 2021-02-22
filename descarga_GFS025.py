@@ -155,14 +155,14 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
     path = f"{LEVELS}{parameters}{DOMAIN_PARAMETERS}{dir_gfs_name}"
     # ?file=geavg.t00z.pgrb2s.0p25.f000
     if model == 'gfs':
-        hours = [f"{i:03}" for i in range(0, nhours+1, 3)]
+        hours = [f"{i:03}" for i in range(0, int(nhours)+1, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=gfs.t{fciA}z.pgrb2.0p25.f{hfA2}"
             local_file = f"GFS_{day}{fciA}+{hfA2}.grib2"
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
     elif model == 'gefs':
-        hours = [f"{i:03}" for i in range(0, nhours+1, 3)]
+        hours = [f"{i:03}" for i in range(0, int(nhours)+1, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=geavg.t{fciA}z.pgrb2s.0p25.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p25.grib2"
@@ -354,7 +354,7 @@ def main():
                         required=True)
     parser.add_argument("--nhours", dest="nhours", help="hours of simultation \
                         to download", required=True)
-    
+
     args = parser.parse_args()
 
     # define options
