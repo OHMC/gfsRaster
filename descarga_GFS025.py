@@ -46,7 +46,7 @@ PAR_LIST = ["PRES", "CRAIN", "PRMSL", "RH", "SOILW", "TMP",
 
 # ADDR
 # TEMPLATE
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p50a.pl?file=gec00.t00z.pgrb2a.0p50.f0&all_lev=on
+# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p50a.pl?file=gec00.t00z.pgrb2a.0p50.f0&all_lev=on
 # &var_PRES=on&var_CRAIN=on&var_PRMSL=on&var_RH=on&var_SOILW=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on
 # &var_TSOIL=on&var_APCP=on&leftlon=-96&rightlon=-15&bottomlat=-75&toplat=-10&dir=/gefs.20210221/00/atmos/pgrb2ap5
 
@@ -169,11 +169,11 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
     elif model == "gefs05":
-        #hours = np.arange(0, 241, 3).tolist()
-        #hours.append(np.arange(246, 841, 6).tolist())
-        [f"{i:03}" for i in range(0, 240, 3)]
+        # hours = np.arange(0, 241, 3).tolist()
+        # hours.append(np.arange(246, 841, 6).tolist())
+
         hours = [f"{i:03}" for i in range(0, 241, 3)]
-        hours = hours + [f"{i:03}" for i in range(46, 841, 3)]
+        hours = hours + [f"{i:03}" for i in range(146, 841, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
