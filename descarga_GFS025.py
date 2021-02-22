@@ -173,7 +173,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
         # hours.append(np.arange(246, 841, 6).tolist())
 
         hours = [f"{i:03}" for i in range(0, 241, 3)]
-        hours = hours + [f"{i:03}" for i in range(146, 841, 3)]
+        hours = hours + [f"{i:03}" for i in range(246, 841, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
