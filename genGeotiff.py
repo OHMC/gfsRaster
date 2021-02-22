@@ -1,5 +1,6 @@
 import rasterio
 import glob
+import argparse
 from affine import Affine
 from datetime import datetime, timedelta
 from osgeo import osr, gdal
@@ -9,8 +10,8 @@ extent = [-75, -40, -58, -25]
 KM_PER_DEGREE = 111.32
 
 
-def getList():
-    return glob.glob('data/GFS/*.grib2', recursive=True)
+def getList(path: str):
+    return glob.glob(path, recursive=True)
 
 
 def getGeoT(extent, nlines, ncols):
@@ -101,7 +102,21 @@ def transformGrib(filename: str):
 
 
 def main():
-    filelist = getList()
+    parser = argparse.ArgumentParser(
+                description='genGeotiff.py --path=data/GEFS/*.grib2',
+                epilog="Conver  all grib2 files stored in path folder \
+                        to a raster in geoTiff format")
+
+    parser.add_argument("--path", type=int, dest="path",
+                        help="folder with grib2", required=True)
+
+    args = parser.parse_args()
+
+    # define options
+    parser.print_help()
+
+    # 'data/GFS/*.grib2'
+    filelist = getList(args.path)
 
     for filename in filelist:
         transformGrib(filename)

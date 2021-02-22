@@ -16,7 +16,7 @@ import requests
 import datetime
 import socket
 import argparse
-import numpy as np
+
 # CONFIGURATION OF GRIB FILTER AND DATE RANGE
 # Domain (limited area) definition (geographical coordinates)
 LON_W = "-96"
@@ -161,6 +161,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
             local_file = f"GFS_{day}{fciA}+{hfA2}.grib2"
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
+
     elif model == 'gefs':
         hours = [f"{i:03}" for i in range(0, int(nhours)+1, 3)]
         for hfA2 in hours:
@@ -168,10 +169,10 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p25.grib2"
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
+
     elif model == "gefs05":
         # hours = np.arange(0, 241, 3).tolist()
         # hours.append(np.arange(246, 841, 6).tolist())
-
         hours = [f"{i:03}" for i in range(0, 241, 3)]
         hours = hours + [f"{i:03}" for i in range(246, 823, 6)]
         for hfA2 in hours:
