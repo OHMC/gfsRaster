@@ -352,9 +352,9 @@ def main():
                         required=True)
     parser.add_argument("--model", dest="model", help="if its gfs/gefs/gefs05",
                         required=True)
-
-                        to download", required=True)
     parser.add_argument("--nhours", dest="nhours", help="hours of simultation \
+                        to download", required=True)
+    
     args = parser.parse_args()
 
     # define options
