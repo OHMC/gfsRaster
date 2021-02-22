@@ -173,7 +173,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
         # hours.append(np.arange(246, 841, 6).tolist())
 
         hours = [f"{i:03}" for i in range(0, 241, 3)]
-        hours = hours + [f"{i:03}" for i in range(246, 841, 6)]
+        hours = hours + [f"{i:03}" for i in range(246, 823, 6)]
         for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
@@ -353,8 +353,8 @@ def main():
     parser.add_argument("--model", dest="model", help="if its gfs/gefs/gefs05",
                         required=True)
 
-    parser.add_argument("--nhours", dest="nhours", help="hours of simultation to download",
-                        required=True)
+                        to download", required=True)
+    parser.add_argument("--nhours", dest="nhours", help="hours of simultation \
     args = parser.parse_args()
 
     # define options
