@@ -155,14 +155,14 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
     path = f"{LEVELS}{parameters}{DOMAIN_PARAMETERS}{dir_gfs_name}"
     # ?file=geavg.t00z.pgrb2s.0p25.f000
     if model == 'gfs':
-        hours = np.arange(0, nhours+1, 3).tolist()
+        hours = [f"{i:03}" for i in range(0, nhours+1, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=gfs.t{fciA}z.pgrb2.0p25.f{hfA2}"
             local_file = f"GFS_{day}{fciA}+{hfA2}.grib2"
             list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
             list_files_local.append(local_file)
     elif model == 'gefs':
-        hours = np.arange(0, nhours+1, 3).tolist()
+        hours = [f"{i:03}" for i in range(0, nhours+1, 3)]
         for hfA2 in hours:
             file_name_base = f"?file=geavg.t{fciA}z.pgrb2s.0p25.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p25.grib2"
@@ -173,7 +173,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
         # hours.append(np.arange(246, 841, 6).tolist())
 
         hours = [f"{i:03}" for i in range(0, 241, 3)]
-        hours = hours + [f"{i:03}" for i in range(246, 841, 3)]
+        hours = hours + [f"{i:03}" for i in range(246, 841, 6)]
         for hfA2 in hours:
             file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
             local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
