@@ -11,7 +11,7 @@ def getList(regex: str):
     return glob.glob(regex, recursive=True)
 
 
-def integrate_basins(basins_fp: str) -> gpd.GeoDataFrame:
+def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
     """
     This functions opens a geotiff with ppn data, converts to a raster,
     integrate the ppn into cuencas and returns a GeoDataFrame object.
@@ -22,9 +22,8 @@ def integrate_basins(basins_fp: str) -> gpd.GeoDataFrame:
         cuencas_gdf_ppn (GeoDataFrame): a geodataframe with cuerncas and ppn
     """
 
-    cuencas_shp = '/home/sagus/Development/wrf-cuenca/src/shapefiles/cuencas_hidro_new.shp'
-    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(cuencas_shp)
-    df_zs = pd.DataFrame(zonal_stats(cuencas_shp, basins_fp))
+    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
+    df_zs = pd.DataFrame(zonal_stats(shapefile, basins_fp))
 
     cuencas_gdf_ppn = pd.concat([cuencas_gdf, df_zs], axis=1).dropna(subset=['mean'])
 
@@ -34,26 +33,30 @@ def integrate_basins(basins_fp: str) -> gpd.GeoDataFrame:
                             'max', 'min', 'mean']]
 
 
-def getBasisns(filelist: list):
+def getBasisns(filelist: list, shapefile: str):
 
     rioii = pd.DataFrame()
 
     for filename in filelist:
-        cuencas_gdf = integrate_basins(filename)
+        print(f"Processing {filename}")
+        cuencas_gdf = integrate_basins(filename, shapefile)
         cuencas_gdf = cuencas_gdf.loc[cuencas_gdf.index == 49]
         cuencas_gdf = cuencas_gdf[['subcuenca', 'subcuenca']]
         cuencas_gdf['date'] = datetime.datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
         rioii.append(cuencas_gdf, ignore_index=True)
 
+    dialy = rioii.resample('D', on='date').sum()
+    dialy.to_csv('GFS_ppn_diario.csv')
 
-def geotiffToBasisns(regex: str):
+def geotiffToBasisns(regex: str, shapefile: str):
     filelist = getList(regex)
-    getBasisns(filelist)
+    getBasisns(filelist, shapefile)
 
 
 def main():
     regex = "geotiff/GFS_PPN_*.tiff"
-    geotiffToBasisns(regex)
+    shapefile = "../../wrf-cuenca/src/shapefiles/cuencas_hidro_new.shp"
+    geotiffToBasisns(regex, shapefile)
 
 
 if __name__ == "__main__":
