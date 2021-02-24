@@ -107,7 +107,7 @@ def main():
                 epilog="Conver  all grib2 files stored in path folder \
                         to a raster in geoTiff format")
 
-    parser.add_argument("--path", type=int, dest="path",
+    parser.add_argument("--path", type=str, dest="path",
                         help="folder with grib2", required=True)
 
     args = parser.parse_args()
