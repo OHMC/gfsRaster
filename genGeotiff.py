@@ -9,6 +9,23 @@ extent = [-75, -40, -58, -25]
 # Define KM_PER_DEGREE
 KM_PER_DEGREE = 111.32
 
+GEFS_REGEX = r"wrfout_(?P<param>[A-Z])_[a-z0-9]{3,4}_(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})"
+
+
+def getInfo(filename: str):
+    """Retorna la parametrizacion y el timestamp a partir del
+    nombre del archivo wrfout"""
+    m = re.match(WRFOUT_REGEX, wrfout)
+    if not m:
+        logger.critical("No se pudo obtener la configuracion, proporcione"
+                        "una desde los parametros de ejecición.")
+        raise ValueError
+    m_dict = m.groupdict()
+    param = m_dict.get('param')
+    timestamp = datetime.datetime.strptime(m_dict.get('timestamp'),
+                                           '%Y-%m-%d_%H:%M:%S')
+    return param, timestamp
+
 
 def getList(path: str):
     return glob.glob(path, recursive=True)
@@ -21,12 +38,18 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
-def transformGrib(filename: str):
+def transformGrib(filename: str, model: str):
+    # Select model
+    if model == 'gfs':
+        bandNumber = 145
+    elif model == 'gefs':
+        bandNumber = 7
+
     # Read the GRIB file
     grib = gdal.Open(filename)
 
     # Read an specific band: Total Precipation
-    band = grib.GetRasterBand(145)
+    band = grib.GetRasterBand(bandNumber)
 
     # ORIGIN DATASET
     # Create grid
@@ -44,7 +67,7 @@ def transformGrib(filename: str):
     origin.GetRasterBand(1).WriteRaster(0, 0,
                                         grib.RasterXSize,
                                         grib.RasterYSize,
-                                        grib.GetRasterBand(145).ReadRaster())
+                                        grib.GetRasterBand(bandNumber).ReadRaster())
 
     # DESTINATION DATASET
     # Lat/lon WSG84 Spatial Reference System
@@ -84,7 +107,7 @@ def transformGrib(filename: str):
     # Build filename
     seconds = int(band.GetMetadata()['GRIB_VALID_TIME'][2:12])
     datetimetiff = datetime(1970, 1, 1, 0, 0) + timedelta(0, seconds)
-    tiffname = f"GFS_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+    tiffname = f"GEFS_02_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
     path = f"geotiff/{tiffname}"
 
     # WRITE GIFF
@@ -104,11 +127,14 @@ def transformGrib(filename: str):
 def main():
     parser = argparse.ArgumentParser(
                 description='genGeotiff.py --path=data/GEFS/*.grib2',
-                epilog="Conver  all grib2 files stored in path folder \
+                epilog="Convert  all grib2 files stored in path folder \
                         to a raster in geoTiff format")
 
     parser.add_argument("--path", type=str, dest="path",
                         help="folder with grib2", required=True)
+
+    parser.add_argument("--model", type=str, dest="model",
+                        help="if it's gfs or gefs", required=True)
 
     args = parser.parse_args()
 
@@ -119,7 +145,7 @@ def main():
     filelist = getList(args.path)
 
     for filename in filelist:
-        transformGrib(filename)
+        transformGrib(filename, args.model)
 
 
 if __name__ == "__main__":

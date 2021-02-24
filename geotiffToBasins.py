@@ -41,10 +41,11 @@ def getBasisns(filelist: list, shapefile: str):
         print(f"Processing {filename}")
         cuencas_gdf = integrate_basins(filename, shapefile)
         cuencas_gdf = cuencas_gdf.loc[cuencas_gdf.index == 49]
-        cuencas_gdf = cuencas_gdf[['subcuenca', 'subcuenca']]
+        cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
         cuencas_gdf['date'] = datetime.datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
-        rioii.append(cuencas_gdf, ignore_index=True)
+        rioii = rioii.append(cuencas_gdf, ignore_index=True)
 
+    rioii.to_csv("GFS_ppm_all.csv")
     dialy = rioii.resample('D', on='date').sum()
     dialy.to_csv('GFS_ppn_diario.csv')
 
