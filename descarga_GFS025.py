@@ -131,6 +131,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
 
     # dir=%2Fgefs.20210218%2F00%2Fatmos%2Fpgrb2sp25
     # filter_gefs_atmos_0p50a.pl pgrb2ap5
+
     if model == 'gfs':
         PERL_FILTER = "filter_gfs_0p25.pl"
         dir_gfs_name = f"&dir=%2Fgfs.{day}%2F{fciA}"
@@ -140,6 +141,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
     elif model == 'gefs05':
         PERL_FILTER = "filter_gefs_atmos_0p50a.pl"
         dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2ap5"
+                       
 
     # get list of var to download
     parameters = ""
@@ -174,19 +176,21 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
         # hours = np.arange(0, 241, 3).tolist()
         # hours.append(np.arange(246, 841, 6).tolist())
         hours = [f"{i:03}" for i in range(0, 241, 3)]
-        hours = hours + [f"{i:03}" for i in range(246, 823, 6)]
+        hours = hours + [f"{i:03}" for i in range(246, 841, 6)]
+        perturbations = [f"{i:02}" for i in range(1, 31, 1)]
         for hfA2 in hours:
-            file_name_base = f"?file=gec00.t{fciA}z.pgrb2a.0p50.f{hfA2}"
-            local_file = f"GEFS_{day}{fciA}+{hfA2}.0p50.grib2"
-            list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
-            list_files_local.append(local_file)
+            for pert in perturbations:
+                file_name_base = f"?file=gep{pert}.t{fciA}z.pgrb2a.0p50.f{hfA2}"
+                local_file = f"GEFS_{pert}_{day}{fciA}+{hfA2}.0p50.grib2"
+                list_remote_files.append(f"{PERL_FILTER}{file_name_base}{path}")
+                list_files_local.append(local_file)
 
-    print("********************************")
-    print(list_remote_files)
-    print("********************************")
-    print(list_files_local)
-    print("********************************")
-
+    for key in range(len(list_remote_files)):
+        print("************************************************************")
+        print(f"Remote file Nº {key}: {list_remote_files[key]}")
+        print("------------------------------------------------------------")
+        print(f"Localfile file Nº {key}: {list_files_local[key]}")
+        
     return list_remote_files, list_files_local
 
 
