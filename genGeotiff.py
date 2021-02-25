@@ -9,22 +9,19 @@ extent = [-75, -40, -58, -25]
 # Define KM_PER_DEGREE
 KM_PER_DEGREE = 111.32
 
-GEFS_REGEX = r"wrfout_(?P<param>[A-Z])_[a-z0-9]{3,4}_(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})"
-
 
 def getInfo(filename: str):
     """Retorna la parametrizacion y el timestamp a partir del
     nombre del archivo wrfout"""
-    m = re.match(WRFOUT_REGEX, wrfout)
-    if not m:
-        logger.critical("No se pudo obtener la configuracion, proporcione"
-                        "una desde los parametros de ejecición.")
-        raise ValueError
-    m_dict = m.groupdict()
-    param = m_dict.get('param')
-    timestamp = datetime.datetime.strptime(m_dict.get('timestamp'),
-                                           '%Y-%m-%d_%H:%M:%S')
-    return param, timestamp
+    pert = None
+    filename = filename.split('/')[-1]
+    model, timestamp = filename.split('_', 1)
+    if model == 'GEFS':
+        pert, timestamp = timestamp.split('_', 1)
+    daterun, ends = timestamp.split('+', 1)
+    date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
+
+    return model, date, pert
 
 
 def getList(path: str):
@@ -38,11 +35,13 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
-def transformGrib(filename: str, model: str):
+def transformGrib(filename: str):
+
+    model, date, pert = getInfo(filename)
     # Select model
-    if model == 'gfs':
+    if model == 'GFS':
         bandNumber = 145
-    elif model == 'gefs':
+    elif model == 'GEFS':
         bandNumber = 7
 
     # Read the GRIB file
@@ -107,7 +106,7 @@ def transformGrib(filename: str, model: str):
     # Build filename
     seconds = int(band.GetMetadata()['GRIB_VALID_TIME'][2:12])
     datetimetiff = datetime(1970, 1, 1, 0, 0) + timedelta(0, seconds)
-    tiffname = f"GEFS_02_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+    tiffname = f"{model}_{pert}_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
     path = f"geotiff/{tiffname}"
 
     # WRITE GIFF
@@ -133,9 +132,6 @@ def main():
     parser.add_argument("--path", type=str, dest="path",
                         help="folder with grib2", required=True)
 
-    parser.add_argument("--model", type=str, dest="model",
-                        help="if it's gfs or gefs", required=True)
-
     args = parser.parse_args()
 
     # define options
@@ -145,7 +141,7 @@ def main():
     filelist = getList(args.path)
 
     for filename in filelist:
-        transformGrib(filename, args.model)
+        transformGrib(filename)
 
 
 if __name__ == "__main__":

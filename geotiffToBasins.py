@@ -2,6 +2,7 @@ import geopandas as  gpd
 import pandas as pd
 import datetime
 import glob
+import argparse
 from rasterstats import zonal_stats
 
 COLUM_REPLACE = {'Subcuenca': 'subcuenca', 'Cuenca': 'cuenca'}
@@ -45,9 +46,9 @@ def getBasisns(filelist: list, shapefile: str):
         cuencas_gdf['date'] = datetime.datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
         rioii = rioii.append(cuencas_gdf, ignore_index=True)
 
-    rioii.to_csv("GFS_ppm_all.csv")
+    rioii.to_csv("GEFS_05_ppm_all.csv")
     dialy = rioii.resample('D', on='date').sum()
-    dialy.to_csv('GFS_ppn_diario.csv')
+    dialy.to_csv('GEFS_05_ppn_diario.csv')
 
 def geotiffToBasisns(regex: str, shapefile: str):
     filelist = getList(regex)
@@ -55,10 +56,27 @@ def geotiffToBasisns(regex: str, shapefile: str):
 
 
 def main():
-    regex = "geotiff/GFS_PPN_*.tiff"
-    shapefile = "../../wrf-cuenca/src/shapefiles/cuencas_hidro_new.shp"
-    geotiffToBasisns(regex, shapefile)
+    # regex = "geotiff/GEFS_01_PPN_*.tiff"
+    # shapefile = "../../wrf-cuenca/src/shapefiles/cuencas_hidro_new.shp"
 
+
+    parser = argparse.ArgumentParser(
+                description='geotiffToBasins.py --path=geotiff/GEFS*.tiff --shapefile=shapefiles/basisn.shp',
+                epilog="Convert  all grib2 files stored in path folder \
+                        to a raster in geoTiff format")
+
+    parser.add_argument("--path", type=str, dest="path",
+                        help="folder with geoti", required=True)
+
+    parser.add_argument("--shapefile", type=str, dest="shapefile",
+                        help="if it's gfs or gefs", required=True)
+
+    args = parser.parse_args()
+
+    # define options
+    parser.print_help()
+
+    geotiffToBasisns(args.path, args.shapefile)
 
 if __name__ == "__main__":
     main()
