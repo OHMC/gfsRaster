@@ -10,6 +10,19 @@ extent = [-75, -40, -58, -25]
 KM_PER_DEGREE = 111.32
 
 
+def getInfo(filename: str):
+    """Retorna la parametrizacion y el timestamp a partir del
+    nombre del archivo wrfout"""
+    pert = None
+    filename = filename.split('/')[-1]
+    model, timestamp = filename.split('_', 1)
+    pert, timestamp = timestamp.split('_', 1)
+    daterun, ends = timestamp.split('+', 1)
+    date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
+
+    return model, date, pert
+
+
 def getList(path: str):
     return glob.glob(path, recursive=True)
 
@@ -22,11 +35,23 @@ def getGeoT(extent, nlines, ncols):
 
 
 def transformGrib(filename: str):
+
+    model, date, pert = getInfo(filename)
+    # Select model
+    if model == 'GFS':
+        bandNumber = 146
+    elif model == 'GEFS':
+        bandNumber = 53
+
+    print(f"Its {model}, band {bandNumber}")
+
     # Read the GRIB file
     grib = gdal.Open(filename)
 
     # Read an specific band: Total Precipation
-    band = grib.GetRasterBand(145)
+    band = grib.GetRasterBand(bandNumber)
+
+    print(f"Its {model}, band {bandNumber}")
 
     # ORIGIN DATASET
     # Create grid
@@ -44,7 +69,7 @@ def transformGrib(filename: str):
     origin.GetRasterBand(1).WriteRaster(0, 0,
                                         grib.RasterXSize,
                                         grib.RasterYSize,
-                                        grib.GetRasterBand(145).ReadRaster())
+                                        grib.GetRasterBand(bandNumber).ReadRaster())
 
     # DESTINATION DATASET
     # Lat/lon WSG84 Spatial Reference System
@@ -84,7 +109,7 @@ def transformGrib(filename: str):
     # Build filename
     seconds = int(band.GetMetadata()['GRIB_VALID_TIME'][2:12])
     datetimetiff = datetime(1970, 1, 1, 0, 0) + timedelta(0, seconds)
-    tiffname = f"GFS_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+    tiffname = f"{model}_{pert}_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
     path = f"geotiff/{tiffname}"
 
     # WRITE GIFF
@@ -104,10 +129,10 @@ def transformGrib(filename: str):
 def main():
     parser = argparse.ArgumentParser(
                 description='genGeotiff.py --path=data/GEFS/*.grib2',
-                epilog="Conver  all grib2 files stored in path folder \
+                epilog="Convert  all grib2 files stored in path folder \
                         to a raster in geoTiff format")
 
-    parser.add_argument("--path", type=int, dest="path",
+    parser.add_argument("--path", type=str, dest="path",
                         help="folder with grib2", required=True)
 
     args = parser.parse_args()
@@ -117,6 +142,7 @@ def main():
 
     # 'data/GFS/*.grib2'
     filelist = getList(args.path)
+    filelist.sort()
 
     for filename in filelist:
         transformGrib(filename)
