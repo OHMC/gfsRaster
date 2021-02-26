@@ -1,11 +1,25 @@
 import geopandas as  gpd
 import pandas as pd
-import datetime
+from datetime import datetime, timedelta
 import glob
 import argparse
 from rasterstats import zonal_stats
 
 COLUM_REPLACE = {'Subcuenca': 'subcuenca', 'Cuenca': 'cuenca'}
+
+def getInfo(filename: str):
+    """Retorna la parametrizacion y el timestamp a partir del
+    nombre del archivo wrfout
+    geotiff/GEFS_01_PPN_2021-02-23Z00:00.tiff"""
+    pert = None
+    filename = filename.split('/')[-1]
+    model, timestamp = filename.split('_', 1)
+    pert, timestamp = timestamp.split('_', 1)
+    var, timestamp = timestamp.split('_', 1)
+    timestamp, extension = timestamp.split('.', 1)
+    date = datetime.strptime(timestamp, "%Y-%m-%dZ%H:%M")
+
+    return model, date, pert
 
 
 def getList(regex: str):
@@ -24,7 +38,7 @@ def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
     """
 
     cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
-    df_zs = pd.DataFrame(zonal_stats(shapefile, basins_fp))
+    df_zs = pd.DataFrame(zonal_stats(shapefile, basins_fp, all_touched=True))
 
     cuencas_gdf_ppn = pd.concat([cuencas_gdf, df_zs], axis=1).dropna(subset=['mean'])
 
@@ -35,20 +49,43 @@ def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
 
 
 def getBasisns(filelist: list, shapefile: str):
-
-    rioii = pd.DataFrame()
+   
+    pert = None
 
     for filename in filelist:
         print(f"Processing {filename}")
+        model, date, pert = getInfo(filename)
+        rioii = pd.DataFrame()
+
         cuencas_gdf = integrate_basins(filename, shapefile)
         cuencas_gdf = cuencas_gdf.loc[cuencas_gdf.index == 49]
         cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
-        cuencas_gdf['date'] = datetime.datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
+        cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
         rioii = rioii.append(cuencas_gdf, ignore_index=True)
 
-    rioii.to_csv("GEFS_05_ppm_all.csv")
-    dialy = rioii.resample('D', on='date').sum()
-    dialy.to_csv('GEFS_05_ppn_diario.csv')
+        rioii.to_csv(f"data/csv/{model}_{pert}_ppm_all.csv",
+                     mode='a',
+                     header=False)
+                # dialy = rioii.resample('D', on='date').sum()
+                # dialy.to_csv(f"data/csv/{model}_{lastpert}_ppn_diario.csv",
+                #              mode='a',
+                #              header=False)
+    
+    filelistcsv = glob.glob(f"data/csv/{model}_*.csv")
+
+    for filecsv in filelistcsv:
+        GEFS = pd.read_csv(filecsv, header=None) # the first data is trash
+        GEFS["mean"] = GEFS[2]
+        GEFS["date"] = pd.to_datetime(GEFS[3])
+        GEFS = GEFS[["mean", "date"]]
+        GEFS = GEFS.iloc[1:]
+        GEFS.set_index('date')
+        dialy = GEFS.resample('D', on="date").sum()
+    
+        filename = filecsv.split('/')[-1]
+        name, exten = filename.split('.')
+        dialy.to_csv(f"data/csv/{name}_day.{exten}")
+
 
 def geotiffToBasisns(regex: str, shapefile: str):
     filelist = getList(regex)

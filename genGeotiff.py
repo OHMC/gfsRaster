@@ -16,8 +16,7 @@ def getInfo(filename: str):
     pert = None
     filename = filename.split('/')[-1]
     model, timestamp = filename.split('_', 1)
-    if model == 'GEFS':
-        pert, timestamp = timestamp.split('_', 1)
+    pert, timestamp = timestamp.split('_', 1)
     daterun, ends = timestamp.split('+', 1)
     date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
 
@@ -40,15 +39,19 @@ def transformGrib(filename: str):
     model, date, pert = getInfo(filename)
     # Select model
     if model == 'GFS':
-        bandNumber = 145
+        bandNumber = 146
     elif model == 'GEFS':
-        bandNumber = 7
+        bandNumber = 53
+
+    print(f"Its {model}, band {bandNumber}")
 
     # Read the GRIB file
     grib = gdal.Open(filename)
 
     # Read an specific band: Total Precipation
     band = grib.GetRasterBand(bandNumber)
+
+    print(f"Its {model}, band {bandNumber}")
 
     # ORIGIN DATASET
     # Create grid
@@ -139,6 +142,7 @@ def main():
 
     # 'data/GFS/*.grib2'
     filelist = getList(args.path)
+    filelist.sort()
 
     for filename in filelist:
         transformGrib(filename)
