@@ -218,80 +218,40 @@ def download(output_dir, list_remote_files,
 
     # sys.exit(0)
     # Dowloading of requested files
-    WORK = True
 
     count_files_to_download = len(list_remote_files)
     print(f"Request in server: {server}")
     print(f"count of files to download: {count_files_to_download}")
     # extenar check, if this fail we go out
-    count = 1
+    not_downloaded_files = []
 
-    while count <= COUNTMAX:
-        print('Attempt number: ', count)
-        count_req_files = 0
-        # to check if all desired files were downloaded
-        count_down_iter = 0
+    # to check if all desired files were downloaded
+    for ifile in range(0, count_files_to_download):
 
-        for ifile in range(0, count_files_to_download):
-            count_down_iter = count_down_iter + 1
-            remote_file = f"{server}{list_remote_files[ifile]}"
-            local_file = (f"{output_dir}/{list_files_local[ifile]}")
+        remote_file = f"{server}{list_remote_files[ifile]}"
+        local_file = (f"{output_dir}/{list_files_local[ifile]}")
 
-            ##############################
-            print(f"local_file {local_file}")
-            print(f"remote_file {remote_file}")
-            ############################
+        ##############################
+        print(f"DOwnloading: {local_file}")
+        ############################
 
-            ierr = 100
-            icount = 0
-
-            while ierr != 0 and icount <= ICOUNTMAX:
-                icount = icount + 1
-                # The following prints on the sceen the entire
-                # text of the request
-                print("Request remote file: ", remote_file)
-                if ((not (os.path.exists(local_file))) or
-                   ((os.path.getsize(local_file)) <= 20000000)):
-                    # Download de remopte file
-                    ierr = download_grb_file(remote_file, local_file)
-                    print('dowloading error= ', ierr)
-                    if ierr == 0:  # successeful downloading
-                        count_req_files = count_req_files+1
-                        print(f"Requested file downloaded in {local_file}")
-                    else:  # unsuccesseful downloading
-                        print(f'File {remote_file} not downloaded! sleep')
-                        time.sleep(S_SLEEP2)
-                else:
-                    print('Archivo ya descargado')
-                    ierr = 0
-                    count_req_files = count_req_files + 1
-
-            if count_down_iter == count_req_files:
-                # if we downloaded all files
-                WORK = False
-        if WORK:
-            print(f"Not all requested files downloaded, "
-                  f"sleeping {S_SLEEP1} s before next trial")
-            time.sleep(S_SLEEP1)
+        # The following prints on the sceen the entire
+        # text of the request
+        print("Request remote file: ", remote_file)
+        if (not (os.path.exists(local_file))):
+            # Download de remopte file
+            ierr = download_grb_file(remote_file, local_file)
+            print('dowloading error= ', ierr)
+            if ierr == 0:  # successeful downloading
+                print(f"Requested file downloaded in {local_file}")
+            else:  # unsuccesseful downloading
+                print(f'File {remote_file} not downloaded!')
+                not_downloaded_files.append(remote_file)
         else:
-            print('**************************************************')
-            print(" All requested grib2 files downloaded !")
-            print('**************************************************')
-            return True
-
-        count = count+1
-        if WORK:
-            print(f"All acceptable attempts have been done in this"
-                  f" server, sleeping {S_SLEEP2}s befor request"
-                  f" other server")
-            time.sleep(S_SLEEP2)
-        else:
-            return True
-
-        if not WORK:
-            return True
-
-    return False
+            print('Archivo ya descargado')
+    print(f"Failed to download files: [not_downloaded_files]")
+   
+    return True
 
 
 def download_ftp(output_dir: str, inidate: str):
