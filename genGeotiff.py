@@ -12,11 +12,13 @@ KM_PER_DEGREE = 111.32
 
 def getInfo(filename: str):
     """Retorna la parametrizacion y el timestamp a partir del
-    nombre del archivo wrfout"""
+    nombre del archivo wrfout
+    GFS_2021030100+384.grib2"""
     pert = None
     filename = filename.split('/')[-1]
     model, timestamp = filename.split('_', 1)
-    pert, timestamp = timestamp.split('_', 1)
+    if model == 'GEFS':
+        pert, timestamp = timestamp.split('_', 1)
     daterun, ends = timestamp.split('+', 1)
     date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
 
