@@ -58,7 +58,7 @@ def getBasisns(filelist: list, shapefile: str):
         rioii = pd.DataFrame()
 
         cuencas_gdf = integrate_basins(filename, shapefile)
-        cuencas_gdf = cuencas_gdf.loc[cuencas_gdf.index == 49]
+        cuencas_gdf = cuencas_gdf.loc[cuencas_gdf["subcuenca"].str.contains('Tercero')]
         cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
         cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
         rioii = rioii.append(cuencas_gdf, ignore_index=True)
@@ -74,11 +74,11 @@ def getBasisns(filelist: list, shapefile: str):
     filelistcsv = glob.glob(f"data/csv/{model}_*.csv")
 
     for filecsv in filelistcsv:
-        GEFS = pd.read_csv(filecsv, header=None) # the first data is trash
+        GEFS = pd.read_csv(filecsv, header=None) 
         GEFS["mean"] = GEFS[2]
         GEFS["date"] = pd.to_datetime(GEFS[3])
         GEFS = GEFS[["mean", "date"]]
-        GEFS = GEFS.iloc[1:]
+        GEFS = GEFS.iloc[1:] # the first data is trash
         GEFS.set_index('date')
         dialy = GEFS.resample('D', on="date").sum()
     
