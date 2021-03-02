@@ -133,3 +133,4 @@ data/*
 output/*
 .vscode/
 *.csv
+*.png
