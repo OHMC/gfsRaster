@@ -10,10 +10,23 @@ extent = [-75, -40, -58, -25]
 KM_PER_DEGREE = 111.32
 
 
+def getPpnBand(grib):
+    """ De un Dataset de gdal devuelve la banda donde se encuentra
+    la variable APCP
+    """
+    for band in range(1, grib.RasterCount + 1):
+        var = grib.GetRasterBand(band)
+        if var.GetMetadata()['GRIB_ELEMENT'] in ("APCP03", "APCP06"):
+            # print(f"Total precipitation is band {band}")
+            return int(band)
+    print("NO APCP, it's 000 data?")
+    return None
+
+
 def getInfo(filename: str):
     """Retorna la parametrizacion y el timestamp a partir del
     nombre del archivo wrfout
-    GFS_2021030100+384.grib2"""
+    """
     pert = None
     filename = filename.split('/')[-1]
     model, timestamp = filename.split('_', 1)
@@ -39,21 +52,21 @@ def getGeoT(extent, nlines, ncols):
 def transformGrib(filename: str):
 
     model, date, pert = getInfo(filename)
-    # Select model
-    if model == 'GFS':
-        bandNumber = 146
-    elif model == 'GEFS':
-        bandNumber = 53
-
-    print(f"Its {model}, band {bandNumber}")
-
+    # print(f"Processing {filename}")
     # Read the GRIB file
     grib = gdal.Open(filename)
+    if not grib:
+        print("Dataset not compatible with GDAL")
+        return
+
+    bandNumber = getPpnBand(grib)
+    # print(f"Band {bandNumber} of type {type(bandNumber)}")
+    if bandNumber == None:
+        print("ERROR : The dataset doesn't contain Total Precipitation variable")
+        return
 
     # Read an specific band: Total Precipation
     band = grib.GetRasterBand(bandNumber)
-
-    print(f"Its {model}, band {bandNumber}")
 
     # ORIGIN DATASET
     # Create grid

@@ -41,20 +41,25 @@ S_SLEEP2 = 60
 
 # Definition of requested levels and parameters
 # PAR_LIST=["TMAX"]
-PAR_LIST = ["PRES", "CRAIN", "PRMSL", "RH", "SOILW", "TMP",
-            "UGRD", "VGRD", "WEASD", "TSOIL", "APCP"]
+# PRES surface
+# RH 2 m
+# TMP 2m
+# UGRD 10 m
+# VGRD 10 m
+# APCP 
+PAR_LIST = ["APCP", "PRES", "RH",
+             "TMP",  "UGRD", "VGRD"]
 
 # ADDR
 # TEMPLATE
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p50a.pl?file=gec00.t00z.pgrb2a.0p50.f0&all_lev=on
-# &var_PRES=on&var_CRAIN=on&var_PRMSL=on&var_RH=on&var_SOILW=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on
-# &var_TSOIL=on&var_APCP=on&leftlon=-96&rightlon=-15&bottomlat=-75&toplat=-10&dir=/gefs.20210221/00/atmos/pgrb2ap5
+# https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_0p50a.pl?file=gep01.t00z.pgrb2a.0p50.f024
+# &lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_PRES=on&var_RH=on&var_TMP=on
+# &var_UGRD=on&var_VGRD=on&leftlon=-96&rightlon=-15&toplat=-10&bottomlat=-75&showurl=
+# &dir=%2Fgefs.20210302%2F00%2Fatmos%2Fpgrb2ap5
 
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?file=gfs.t00z.pgrb2.0p25.f000&all_lev=on
-# &all_var=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.20210218%2F00
+# https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?file=gfs.t00z.pgrb2.0p25.f003&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_PRES=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&leftlon=-96&rightlon=-15&toplat=-10&bottomlat=-75&dir=%2Fgfs.20210302%2F00
 
-# https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?file=gfs.t00z.pgrb2.0p25.f000&all_lev=on
-# &all_var=on&leftlon=-96&rightlon=-15&bottomlat=-75&toplat=-10dir=%2Fgfs.20210218%2F00
+# https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?file=gfs.t00z.pgrb2.0p25.f003&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_PRES=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&leftlon=-96&rightlon=-15&toplat=-10&bottomlat=-75&dir=%2Fgfs.20210302%2F00
 
 BASE_ADDR = "https://nomads.ncep.noaa.gov/cgi-bin/"
 
@@ -62,7 +67,7 @@ BASE_FTP = "https://ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/"
 
 DOMAIN_PARAMETERS = (f"&leftlon={LON_W}&rightlon={LON_E}"
                      f"&bottomlat={LAT_S}&toplat={LAT_N}")
-LEVELS = "&all_lev=on"
+LEVELS = "&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on"
 
 
 def download_grb_file(url, outfile):
@@ -232,7 +237,7 @@ def download(output_dir, list_remote_files,
         local_file = (f"{output_dir}/{list_files_local[ifile]}")
 
         ##############################
-        print(f"DOwnloading: {local_file}")
+        print(f"Downloading: {local_file}")
         ############################
 
         # The following prints on the sceen the entire
