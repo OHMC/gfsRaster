@@ -51,7 +51,6 @@ def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
 def getBasisns(filelist: list, shapefile: str):
    
     pert = None
-
     for filename in filelist:
         print(f"Processing {filename}")
         model, date, pert = getInfo(filename)
@@ -89,6 +88,9 @@ def getBasisns(filelist: list, shapefile: str):
 
 def geotiffToBasisns(regex: str, shapefile: str):
     filelist = getList(regex)
+    if not filelist:
+        print("ERROR: No geotiff files matched")
+        return
     getBasisns(filelist, shapefile)
 
 
