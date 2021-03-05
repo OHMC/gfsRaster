@@ -71,7 +71,7 @@ def getBasisns(filelist: list, shapefile: str):
                 #              mode='a',
                 #              header=False)
     
-    filelistcsv = glob.glob(f"data/csv/{model}_*.csv")
+    filelistcsv = glob.glob(f"data/csv/GEFS_*.csv")
 
     for filecsv in filelistcsv:
         GEFS = pd.read_csv(filecsv, header=None) 

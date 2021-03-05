@@ -1,5 +1,6 @@
 import rasterio
 import glob
+import os
 import argparse
 from affine import Affine
 from datetime import datetime, timedelta
@@ -27,15 +28,15 @@ def getInfo(filename: str):
     """Retorna la parametrizacion y el timestamp a partir del
     nombre del archivo wrfout
     """
-    pert = None
+    member = None
     filename = filename.split('/')[-1]
     model, timestamp = filename.split('_', 1)
     if model == 'GEFS':
-        pert, timestamp = timestamp.split('_', 1)
+        member, timestamp = timestamp.split('_', 1)
     daterun, ends = timestamp.split('+', 1)
     date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
 
-    return model, date, pert
+    return model, date, member
 
 
 def getList(path: str):
@@ -51,7 +52,7 @@ def getGeoT(extent, nlines, ncols):
 
 def transformGrib(filename: str):
 
-    model, date, pert = getInfo(filename)
+    model, date, member = getInfo(filename)
     # print(f"Processing {filename}")
     # Read the GRIB file
     grib = gdal.Open(filename)
@@ -67,7 +68,7 @@ def transformGrib(filename: str):
 
     # Read an specific band: Total Precipation
     band = grib.GetRasterBand(bandNumber)
-
+    
     # ORIGIN DATASET
     # Create grid
     originDriver = gdal.GetDriverByName('MEM')
@@ -123,12 +124,17 @@ def transformGrib(filename: str):
 
     # Build filename
     seconds = int(band.GetMetadata()['GRIB_VALID_TIME'][2:12])
-    datetimetiff = datetime(1970, 1, 1, 0, 0) + timedelta(0, seconds)
-    tiffname = f"{model}_{pert}_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
-    path = f"geotiff/{tiffname}"
+    datetimetiff = datetime(1970, 1, 1, 0, 0)
+    run = datetimetiff.strftime('%H')
+    datetimetiff = datetimetiff + timedelta(0, seconds)
+    tiffname = f"{model}_{member}_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+    path = (f"geotiff/{datetimetiff.strftime('%Y_%m')}/"
+            f"{datetimetiff.strftime('%d')}_{run}")
+    os.mkdir(path) 
+    pathfile = f"{path}/{tiffname}"
 
     # WRITE GIFF
-    nw_ds = rasterio.open(path, 'w', driver='GTiff',
+    nw_ds = rasterio.open(pathfile, 'w', driver='GTiff',
                           height=grid.RasterYSize,
                           width=grid.RasterXSize,
                           count=1,
