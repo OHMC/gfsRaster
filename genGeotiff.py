@@ -1,6 +1,6 @@
 import rasterio
 import glob
-import os
+import pathlib
 import argparse
 from affine import Affine
 from datetime import datetime, timedelta
@@ -15,13 +15,20 @@ def getPpnBand(grib):
     """ De un Dataset de gdal devuelve la banda donde se encuentra
     la variable APCP
     """
+    dictVar = {}
     for band in range(1, grib.RasterCount + 1):
         var = grib.GetRasterBand(band)
+
         if var.GetMetadata()['GRIB_ELEMENT'] in ("APCP03", "APCP06"):
-            # print(f"Total precipitation is band {band}")
-            return int(band)
-    print("NO APCP, it's 000 data?")
-    return None
+            # print(f"Total precipitation is band {band}
+            dictVar[int(band)] = "ACPC"
+        if var.GetMetadata()['GRIB_ELEMENT'] in ("TMP"):
+            if var.GetMetadata()['GRIB_SHORT_NAME'] in ("2-HTGL"):
+                dictVar[int(band)] = "T2"
+            elif var.GetMetadata()['GRIB_SHORT_NAME'] in ("0-SFC"):
+                dictVar[int(band)] = "T0"
+
+    return dictVar
 
 
 def getInfo(filename: str):
@@ -60,15 +67,13 @@ def transformGrib(filename: str):
         print("Dataset not compatible with GDAL")
         return
 
-    bandNumber = getPpnBand(grib)
+    dictVar = getPpnBand(grib)
     # print(f"Band {bandNumber} of type {type(bandNumber)}")
-    if bandNumber == None:
-        print("ERROR : The dataset doesn't contain Total Precipitation variable")
-        return
 
-    # Read an specific band: Total Precipation
-    band = grib.GetRasterBand(bandNumber)
-    
+    if not dictVar:
+        print("The dataset doesnt cointain ANY value")
+        return
+  
     # ORIGIN DATASET
     # Create grid
     originDriver = gdal.GetDriverByName('MEM')
@@ -80,12 +85,6 @@ def transformGrib(filename: str):
     # Setup projection and geo-transformation
     origin.SetProjection(grib.GetProjection())
     origin.SetGeoTransform(grib.GetGeoTransform())
-
-    # write band in Dataset
-    origin.GetRasterBand(1).WriteRaster(0, 0,
-                                        grib.RasterXSize,
-                                        grib.RasterYSize,
-                                        grib.GetRasterBand(bandNumber).ReadRaster())
 
     # DESTINATION DATASET
     # Lat/lon WSG84 Spatial Reference System
@@ -104,45 +103,56 @@ def transformGrib(filename: str):
     grid.SetProjection(targetPrj.ExportToWkt())
     grid.SetGeoTransform(getGeoT(extent, grid.RasterYSize, grid.RasterXSize))
 
-    # Perform the projection/resampling
+    for band in dictVar:
+        # Read an specific band: Total Precipation
+        bandGrid = grib.GetRasterBand(band)
+        # write band in Dataset
+        origin.GetRasterBand(1).WriteRaster(0, 0,
+                                            grib.RasterXSize,
+                                            grib.RasterYSize,
+                                            grib.GetRasterBand(band).ReadRaster())
 
-    gdal.ReprojectImage(
-        origin,
-        grid,
-        grib.GetProjection(),
-        targetPrj.ExportToWkt(),
-        gdal.GRA_NearestNeighbour,
-        options=['NUM_THREADS=ALL_CPUS']
-                       )
+        
+        # Perform the projection/resampling
+        gdal.ReprojectImage(
+            origin,
+            grid,
+            grib.GetProjection(),
+            targetPrj.ExportToWkt(),
+            gdal.GRA_NearestNeighbour,
+            options=['NUM_THREADS=ALL_CPUS']
+                           )
 
-    # Read grid data
-    array1 = grid.ReadAsArray()
+        # Read grid data
+        array1 = grid.ReadAsArray()
 
-    # Get transform in Affine format
-    geotransform = grid.GetGeoTransform()
-    transform = Affine.from_gdal(*geotransform)
+        # Get transform in Affine format
+        geotransform = grid.GetGeoTransform()
+        transform = Affine.from_gdal(*geotransform)
 
-    # Build filename
-    seconds = int(band.GetMetadata()['GRIB_VALID_TIME'][2:12])
-    datetimetiff = datetime(1970, 1, 1, 0, 0)
-    run = datetimetiff.strftime('%H')
-    datetimetiff = datetimetiff + timedelta(0, seconds)
-    tiffname = f"{model}_{member}_PPN_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
-    path = (f"geotiff/{datetimetiff.strftime('%Y_%m')}/"
-            f"{datetimetiff.strftime('%d')}_{run}")
-    os.mkdir(path) 
-    pathfile = f"{path}/{tiffname}"
+        # Build filename
+        seconds = int(bandGrid.GetMetadata()['GRIB_VALID_TIME'][2:12])
+        datetimetiff = datetime(1970, 1, 1, 0, 0)
+        run = datetimetiff.strftime('%H')
+        datetimetiff = datetimetiff + timedelta(0, seconds)
+        tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+        path = (f"geotiff/{datetimetiff.strftime('%Y_%m')}/"
+                f"{datetimetiff.strftime('%d')}_{run}")
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True) 
+        pathfile = f"{path}/{tiffname}"
 
-    # WRITE GIFF
-    nw_ds = rasterio.open(pathfile, 'w', driver='GTiff',
-                          height=grid.RasterYSize,
-                          width=grid.RasterXSize,
-                          count=1,
-                          dtype=gdal.GetDataTypeName(gdal.GDT_Float64).lower(),
-                          crs=grid.GetProjection(),
-                          transform=transform)
-    nw_ds.write(array1, 1)
-    nw_ds.close()
+        # WRITE GIFF
+        nw_ds = rasterio.open(pathfile, 'w', driver='GTiff',
+                              height=grid.RasterYSize,
+                              width=grid.RasterXSize,
+                              count=1,
+                              dtype=gdal.GetDataTypeName(gdal.GDT_Float64).lower(),
+                              crs=grid.GetProjection(),
+                              transform=transform)
+        nw_ds.write(array1, 1)
+        nw_ds.close()
+
+        bandGrid = None
 
     grib = None
 
