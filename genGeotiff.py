@@ -2,9 +2,15 @@ import rasterio
 import glob
 import pathlib
 import argparse
+import ray
+import os
 from affine import Affine
 from datetime import datetime, timedelta
 from osgeo import osr, gdal
+
+RAY_ADDRESS = os.getenv('RAY_ADDRESS', "localhost:6380")
+#ray.init(address=RAY_ADDRESS)
+ray.init(address='localhost:6380', _redis_password='5241590000000000')
 
 extent = [-75, -40, -58, -25]
 # Define KM_PER_DEGREE
@@ -57,6 +63,7 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
+@ray.remote
 def transformGrib(filename: str):
 
     model, date, member = getInfo(filename)
@@ -132,12 +139,14 @@ def transformGrib(filename: str):
 
         # Build filename
         seconds = int(bandGrid.GetMetadata()['GRIB_VALID_TIME'][2:12])
-        datetimetiff = datetime(1970, 1, 1, 0, 0)
-        run = datetimetiff.strftime('%H')
-        datetimetiff = datetimetiff + timedelta(0, seconds)
+        seconds_run = int(bandGrid.GetMetadata()['GRIB_REF_TIME'][2:12])
+        datetime_base = datetime(1970, 1, 1, 0, 0)
+        datetime_run = datetime_base + timedelta(0, seconds_run)
+        run = datetime_run.strftime('%H')
+        datetimetiff = datetime_base + timedelta(0, seconds)
         tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
         path = (f"geotiff/{datetimetiff.strftime('%Y_%m')}/"
-                f"{datetimetiff.strftime('%d')}_{run}")
+                f"{datetime_run.strftime('%d')}_{run}")
         pathlib.Path(path).mkdir(parents=True, exist_ok=True) 
         pathfile = f"{path}/{tiffname}"
 
@@ -176,7 +185,7 @@ def main():
     filelist.sort()
 
     for filename in filelist:
-        transformGrib(filename)
+        transformGrib.remote(filename)
 
 
 if __name__ == "__main__":
