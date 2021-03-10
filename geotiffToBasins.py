@@ -1,9 +1,10 @@
 import geopandas as  gpd
 import pandas as pd
-from datetime import datetime, timedelta
+import ray
 import glob
 import argparse
 from rasterstats import zonal_stats
+from datetime import datetime, timedelta
 
 COLUM_REPLACE = {'Subcuenca': 'subcuenca', 'Cuenca': 'cuenca'}
 
@@ -51,7 +52,9 @@ def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
 def getBasisns(filelist: list, shapefile: str):
    
     pert = None
-    for filename in filelist:
+    it = ray.util.iter.from_items(filelist, num_shards=4)
+
+    for filename in it.gather_async():
         print(f"Processing {filename}")
         model, date, pert = getInfo(filename)
         rioii = pd.DataFrame()
