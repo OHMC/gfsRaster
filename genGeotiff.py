@@ -63,9 +63,9 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
-@ray.remote
+#@ray.remote
 def transformGrib(filename: str):
-
+    print(f"Processing: {filename}")
     model, date, member = getInfo(filename)
     # print(f"Processing {filename}")
     # Read the GRIB file
@@ -145,7 +145,7 @@ def transformGrib(filename: str):
         run = datetime_run.strftime('%H')
         datetimetiff = datetime_base + timedelta(0, seconds)
         tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
-        path = (f"geotiff/{datetimetiff.strftime('%Y_%m')}/"
+        path = (f"geotiff/{datetime_run.strftime('%Y_%m')}/"
                 f"{datetime_run.strftime('%d')}_{run}")
         pathlib.Path(path).mkdir(parents=True, exist_ok=True) 
         pathfile = f"{path}/{tiffname}"
@@ -183,9 +183,10 @@ def main():
     # 'data/GFS/*.grib2'
     filelist = getList(args.path)
     filelist.sort()
+    it = ray.util.iter.from_items(filelist, num_shards=4)
 
-    for filename in filelist:
-        transformGrib.remote(filename)
+    for filename in it.gather_async():
+        transformGrib(filename)
 
 
 if __name__ == "__main__":
