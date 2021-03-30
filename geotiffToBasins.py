@@ -74,7 +74,7 @@ def selectBasin(filename, shapefile, target):
 
 
 @ray.remote
-def zonalEpec(filename: str, shapefile: str, target: str), :
+def zonalEpec(filename: str, shapefile: str, target: str):
     model, date, pert, var = getInfo(filename)
 
     zonas = pd.DataFrame()
