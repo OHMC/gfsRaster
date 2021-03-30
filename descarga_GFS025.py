@@ -139,7 +139,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
 
     if model == 'gfs':
         PERL_FILTER = "filter_gfs_0p25.pl"
-        dir_gfs_name = f"&dir=%2Fgfs.{day}%2F{fciA}"
+        dir_gfs_name = f"&dir=%2Fgfs.{day}%2F{fciA}%2Fatmos"
     elif model == 'gefs':
         PERL_FILTER = "filter_gefs_atmos_0p25s.pl"
         dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2sp25"
