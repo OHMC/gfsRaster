@@ -1,11 +1,14 @@
 import geopandas as  gpd
 import pandas as pd
-from datetime import datetime, timedelta
+import ray
 import glob
 import argparse
 from rasterstats import zonal_stats
+from datetime import datetime, timedelta
 
 COLUM_REPLACE = {'Subcuenca': 'subcuenca', 'Cuenca': 'cuenca'}
+
+ray.init(address='localhost:6380', _redis_password='5241590000000000')
 
 def getInfo(filename: str):
     """Retorna la parametrizacion y el timestamp a partir del
@@ -47,28 +50,32 @@ def integrate_basins(basins_fp: str, shapefile: str) -> gpd.GeoDataFrame:
     return cuencas_gdf_ppn[['subcuenca', 'cuenca', 'geometry', 'count',
                             'max', 'min', 'mean']]
 
+@ray.remote
+def processGiff(filename, shapefile):
+    model, date, pert = getInfo(filename)
+    rioii = pd.DataFrame()
+
+    cuencas_gdf = integrate_basins(filename, shapefile)
+    cuencas_gdf = cuencas_gdf.loc[cuencas_gdf["subcuenca"].str.contains('Tercero')]
+    cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
+    cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
+    rioii = rioii.append(cuencas_gdf, ignore_index=True)
+    filename = f"data/csv/{model}_{pert}_ppm_all.csv"
+    print(f"Saving in {filename}")
+    rioii.to_csv(filename, mode='a', header=False)
+         
 
 def getBasisns(filelist: list, shapefile: str):
    
     pert = None
-    for filename in filelist:
-        print(f"Processing {filename}")
-        model, date, pert = getInfo(filename)
-        rioii = pd.DataFrame()
 
-        cuencas_gdf = integrate_basins(filename, shapefile)
-        cuencas_gdf = cuencas_gdf.loc[cuencas_gdf["subcuenca"].str.contains('Tercero')]
-        cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
-        cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
-        rioii = rioii.append(cuencas_gdf, ignore_index=True)
+    filelist.sort()
+    it = ray.util.iter.from_items(filelist, num_shards=4)
 
-        rioii.to_csv(f"data/csv/{model}_{pert}_ppm_all.csv",
-                     mode='a',
-                     header=False)
-                # dialy = rioii.resample('D', on='date').sum()
-                # dialy.to_csv(f"data/csv/{model}_{lastpert}_ppn_diario.csv",
-                #              mode='a',
-                #              header=False)
+    proc = [processGiff.remote(filename, shapefile) for filename in it.gather_async()]
+    ray.get(proc)
+    #    print(f"Processing {filename}")
+    #    processGiff.remote(filename, shapefile)
     
     filelistcsv = glob.glob(f"data/csv/GEFS_*.csv")
 
