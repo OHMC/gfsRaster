@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from osgeo import osr, gdal
 
 RAY_ADDRESS = os.getenv('RAY_ADDRESS', "localhost:6380")
-#ray.init(address=RAY_ADDRESS)
+# ray.init(address=RAY_ADDRESS)
 ray.init(address='localhost:6380', _redis_password='5241590000000000')
 
 extent = [-75, -40, -58, -25]
@@ -47,7 +47,7 @@ def getInfo(filename: str):
     if model == 'GEFS':
         member, timestamp = timestamp.split('_', 1)
     daterun, ends = timestamp.split('+', 1)
-    date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours = int(ends.split('.')[0]))
+    date = datetime.strptime(daterun, "%Y%m%d%H") + timedelta(hours=int(ends.split('.')[0]))
 
     return model, date, member
 
@@ -63,7 +63,7 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
-#@ray.remote
+# @ray.remote
 def transformGrib(filename: str):
     print(f"Processing: {filename}")
     model, date, member = getInfo(filename)
@@ -80,7 +80,7 @@ def transformGrib(filename: str):
     if not dictVar:
         print("The dataset doesnt cointain ANY value")
         return
-  
+
     # ORIGIN DATASET
     # Create grid
     originDriver = gdal.GetDriverByName('MEM')
@@ -119,7 +119,6 @@ def transformGrib(filename: str):
                                             grib.RasterYSize,
                                             grib.GetRasterBand(band).ReadRaster())
 
-        
         # Perform the projection/resampling
         gdal.ReprojectImage(
             origin,
@@ -147,7 +146,7 @@ def transformGrib(filename: str):
         tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
         path = (f"geotiff/{datetime_run.strftime('%Y_%m')}/"
                 f"{datetime_run.strftime('%d')}_{run}")
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True) 
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         pathfile = f"{path}/{tiffname}"
 
         # WRITE GIFF

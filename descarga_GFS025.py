@@ -8,8 +8,6 @@
 
 # for file-directory functions
 import os
-# for sleep command
-import time
 # for archiving (tar) of created files
 import os.path
 import requests
@@ -46,9 +44,9 @@ S_SLEEP2 = 60
 # TMP 2m
 # UGRD 10 m
 # VGRD 10 m
-# APCP 
+# APCP
 PAR_LIST = ["APCP", "PRES", "RH",
-             "TMP",  "UGRD", "VGRD"]
+            "TMP",  "UGRD", "VGRD"]
 
 # ADDR
 # TEMPLATE
@@ -146,7 +144,6 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
     elif model == 'gefs05':
         PERL_FILTER = "filter_gefs_atmos_0p50a.pl"
         dir_gfs_name = f"&dir=%2Fgefs.{day}%2F{fciA}%2Fatmos%2Fpgrb2ap5"
-                       
 
     # get list of var to download
     parameters = ""
@@ -195,7 +192,7 @@ def get_list_gfs(inidate: str, model: str, nhours: str):
         print(f"Remote file Nº {key}: {list_remote_files[key]}")
         print("------------------------------------------------------------")
         print(f"Localfile file Nº {key}: {list_files_local[key]}")
-        
+
     return list_remote_files, list_files_local
 
 
@@ -254,8 +251,8 @@ def download(output_dir, list_remote_files,
                 not_downloaded_files.append(remote_file)
         else:
             print('Archivo ya descargado')
-    print(f"Failed to download files: [not_downloaded_files]")
-   
+    print(f"Failed to download files: {not_downloaded_files}")
+
     return True
 
 

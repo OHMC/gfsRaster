@@ -4,7 +4,7 @@ import ray
 import glob
 import argparse
 from rasterstats import zonal_stats
-from datetime import datetime, timedelta
+from datetime import datetime
 
 ray.init(address='localhost:6380', _redis_password='5241590000000000')
 
