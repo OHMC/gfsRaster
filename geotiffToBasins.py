@@ -40,7 +40,7 @@ def integrate_shapes(filename: str, shapefile: str,
         cuencas_gdf_ppn (GeoDataFrame): a geodataframe with cuerncas and ppn
     """
 
-    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
+    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
     df_zs = pd.DataFrame(zonal_stats(shapefile, filename, all_touched=True))
 
     cuencas_gdf_ppn = pd.concat([cuencas_gdf,
@@ -70,7 +70,7 @@ def selectBasin(filename, shapefile, target):
     rioii = rioii.append(cuencas_gdf, ignore_index=True)
     filename = f"data/csv/{model}_{pert}_{var}_all.csv"
     print(f"Saving in {filename}")
-    rioii.to_csv(filename, mode='a', header=False)
+    rioii.to_csv(filename, mode='a', header=False, encoding='utf-8')
 
 
 @ray.remote
@@ -85,7 +85,8 @@ def zonalEpec(filename: str, shapefile: str, target: str):
     zonas = zonas.append(zonas_gdf, ignore_index=True)
     filename = f"data/csv/{model}_{target}_{var}_all.csv"
     print(f"Saving in {filename}")
-    zonas.to_csv(filename, mode='a', header=False)
+    zonas.to_csv(filename, mode='a', header=False, encoding='utf-8')
+
 
 def accumDiario(target: str):
     filelistcsv = glob.glob(f"data/csv/*{target}*.csv")
