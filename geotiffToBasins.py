@@ -1,5 +1,6 @@
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 import ray
 import glob
 import argparse
@@ -17,7 +18,7 @@ def getInfo(filename: str):
     filename = filename.split('/')[-1]
     model, timestamp = filename.split('_', 1)
     pert, timestamp = timestamp.split('_', 1)
-    var, timestamp = timestamp.split('_', 1)
+    var, timestamp = timestamp    .split('_', 1)
     timestamp, extension = timestamp.split('.', 1)
     date = datetime.strptime(timestamp, "%Y-%m-%dZ%H:%M")
 
@@ -105,8 +106,53 @@ def accumDiario(target: str):
         dialy.to_csv(f"data/csv/{name}_{target}_day.{exten}")
 
 
+def getT2product(dfT2, dfTSK, awsname, param):
+    """ Obtiene un pronostico de temperatura a partir de las variables
+    T2 y TSK
+    """
+    mask = dfTSK['mean'].values - dfT2['mean'].values
+    mask = mask > 0
+    maskinverted = np.invert(mask)
+
+    fieldname = f"T2P_{awsname}_{'param'}"
+    dfT2 = dfT2.rename(columns={'mean': fieldname})
+    dfTSK = dfTSK.rename(columns={'mean': fieldname})
+
+    append = dfT2[mask].append(dfTSK[maskinverted], sort=True)
+    append.sort_index(inplace=True)
+
+    return append
+
+
 def genT2P(target: str):
-    filelistcsv = glob.glob(f"data/csv/*{target}*.csv")
+    # Open generated CSV
+    data_T0_file = '../data/csv/GFS_zonas_T0_all.csv'
+    data_T2_file = '../data/csv/GFS_zonas_T2_all.csv'
+    data_T0 = pd.read_csv(data_T0_file, header=None)
+    data_T2 = pd.read_csv(data_T2_file, header=None)
+
+    data_T0["name"] = data_T0[1]
+    data_T0["mean"] = data_T0[2]
+    data_T0["date"] = pd.to_datetime(data_T0[3])
+    data_T0 = data_T0[['name', 'mean', 'date']]
+    data_T2["name"] = data_T2[1]
+    data_T2["mean"] = data_T2[2]
+    data_T2["date"] = pd.to_datetime(data_T2[3])
+    data_T2 = data_T2[['name', 'mean', 'date']]
+
+    # Get unique values of zones
+    zonas = data_T0.name.unique()
+    # select by zone
+    zona_T0 = data_T0.loc[data_T0['name'] == zonas[0]]
+    zona_T2 = data_T2.loc[data_T2['name'] == zonas[0]]
+
+    zona_T0 = zona_T0.sort_values(by='date')
+    zona_T2 = zona_T2.sort_values(by='date')
+
+    data = getT2product(zona_T2, zona_T0, zonas[0], 'T2P')
+
+    file_out = '../data/csv/GFS_zonas_T2P.csv'
+    data.to_csv(file_out, header=None, encoding='utf-8')
 
 
 def getBasisns(filelist: list, shapefile: str, target: str):
