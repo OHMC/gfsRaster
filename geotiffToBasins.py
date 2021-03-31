@@ -126,8 +126,8 @@ def getT2product(dfT2, dfTSK, awsname, param):
 
 def genT2P(target: str):
     # Open generated CSV
-    data_T0_file = '../data/csv/GFS_zonas_T0_all.csv'
-    data_T2_file = '../data/csv/GFS_zonas_T2_all.csv'
+    data_T0_file = 'data/csv/GFS_zonas_T0_all.csv'
+    data_T2_file = 'data/csv/GFS_zonas_T2_all.csv'
     data_T0 = pd.read_csv(data_T0_file, header=None)
     data_T2 = pd.read_csv(data_T2_file, header=None)
 
@@ -143,16 +143,17 @@ def genT2P(target: str):
     # Get unique values of zones
     zonas = data_T0.name.unique()
     # select by zone
-    zona_T0 = data_T0.loc[data_T0['name'] == zonas[0]]
-    zona_T2 = data_T2.loc[data_T2['name'] == zonas[0]]
+    for zona in zonas:
+        zona_T0 = data_T0.loc[data_T0['name'] == zonas[0]]
+        zona_T2 = data_T2.loc[data_T2['name'] == zonas[0]]
 
-    zona_T0 = zona_T0.sort_values(by='date')
-    zona_T2 = zona_T2.sort_values(by='date')
+        zona_T0 = zona_T0.sort_values(by='date')
+        zona_T2 = zona_T2.sort_values(by='date')
 
-    data = getT2product(zona_T2, zona_T0, zonas[0], 'T2P')
+        data = getT2product(zona_T2, zona_T0, zonas, 'T2P')
 
-    file_out = '../data/csv/GFS_zonas_T2P.csv'
-    data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
+        file_out = '../data/csv/GFS_zonas_T2P.csv'
+        data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
 
 
 def getBasisns(filelist: list, shapefile: str, target: str):
