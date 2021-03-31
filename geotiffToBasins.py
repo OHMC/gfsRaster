@@ -144,13 +144,13 @@ def genT2P(target: str):
     zonas = data_T0.name.unique()
     # select by zone
     for zona in zonas:
-        zona_T0 = data_T0.loc[data_T0['name'] == zonas[0]]
-        zona_T2 = data_T2.loc[data_T2['name'] == zonas[0]]
+        zona_T0 = data_T0.loc[data_T0['name'] == zona]
+        zona_T2 = data_T2.loc[data_T2['name'] == zona]
 
         zona_T0 = zona_T0.sort_values(by='date')
         zona_T2 = zona_T2.sort_values(by='date')
 
-        data = getT2product(zona_T2, zona_T0, zonas, 'T2P')
+        data = getT2product(zona_T2, zona_T0, zona, 'T2P')
 
         file_out = 'data/csv/GFS_zonas_T2P.csv'
         data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
