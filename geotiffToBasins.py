@@ -87,19 +87,7 @@ def zonalEpec(filename: str, shapefile: str, target: str):
     print(f"Saving in {filename}")
     zonas.to_csv(filename, mode='a', header=False)
 
-
-def getBasisns(filelist: list, shapefile: str, target: str):
-
-    filelist.sort()
-    it = ray.util.iter.from_items(filelist, num_shards=4)
-    if target == "cuencas":
-        proc = [selectBasin.remote(filename, shapefile, target) for filename in it.gather_async()]
-    elif target == "zonas":
-        proc = [zonalEpec.remote(filename, shapefile, target) for filename in it.gather_async()]
-    ray.get(proc)
-    #    print(f"Processing {filename}")
-    #    processGiff.remote(filename, shapefile)
-
+def accumDiario(target: str):
     filelistcsv = glob.glob(f"data/csv/*{target}*.csv")
 
     for filecsv in filelistcsv:
@@ -114,6 +102,26 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         filename = filecsv.split('/')[-1]
         name, exten = filename.split('.')
         dialy.to_csv(f"data/csv/{name}_{target}_day.{exten}")
+
+
+def genT2P(target: str):
+    filelistcsv = glob.glob(f"data/csv/*{target}*.csv")
+
+
+def getBasisns(filelist: list, shapefile: str, target: str):
+
+    filelist.sort()
+    it = ray.util.iter.from_items(filelist, num_shards=4)
+    if target == "cuencas":
+        proc = [selectBasin.remote(filename, shapefile, target) for filename in it.gather_async()]
+        ray.get(proc)
+        accumDiario(target)
+    elif target == "zonas":
+        proc = [zonalEpec.remote(filename, shapefile, target) for filename in it.gather_async()]
+        ray.get(proc)
+        genT2P(target)
+    #    print(f"Processing {filename}")
+    #    processGiff.remote(filename, shapefile)
 
 
 def geotiffToBasisns(regex: str, shapefile: str, target: str):
