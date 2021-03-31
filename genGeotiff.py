@@ -187,8 +187,6 @@ def main():
     proc = [transformGrib.remote(filename) for filename in it.gather_async()]
     ray.get(proc)
 
-        
-
 
 if __name__ == "__main__":
     main()
