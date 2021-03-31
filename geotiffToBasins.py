@@ -152,7 +152,7 @@ def genT2P(target: str):
 
         data = getT2product(zona_T2, zona_T0, zonas, 'T2P')
 
-        file_out = '../data/csv/GFS_zonas_T2P.csv'
+        file_out = 'data/csv/GFS_zonas_T2P.csv'
         data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
 
 
