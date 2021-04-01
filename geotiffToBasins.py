@@ -69,7 +69,8 @@ def selectBasin(filename, shapefile, target):
     cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
     cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
     rioii = rioii.append(cuencas_gdf, ignore_index=True)
-    filename = f"data/csv/{model}_{pert}_{var}_all.csv"
+    run_dir = os.getenv('RUN_DIR')
+    filename = f"{run_dir}/csv/{model}_{pert}_{var}_all.csv"
     print(f"Saving in {filename}")
     rioii.to_csv(filename, mode='a', header=False, encoding='utf-8')
 
@@ -84,7 +85,8 @@ def zonalEpec(filename: str, shapefile: str, target: str):
     zonas_gdf = zonas_gdf[['zona', 'mean']]
     zonas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
     zonas = zonas.append(zonas_gdf, ignore_index=True)
-    filename = f"data/csv/{model}_{target}_{var}_all.csv"
+    run_dir = os.getenv('RUN_DIR')
+    filename = f"{run_dir}/csv/{model}_{target}_{var}_all.csv"
     print(f"Saving in {filename}")
     zonas.to_csv(filename, mode='a', header=False, encoding='utf-8')
 
@@ -103,7 +105,8 @@ def accumDiario(target: str):
 
         filename = filecsv.split('/')[-1]
         name, exten = filename.split('.')
-        dialy.to_csv(f"data/csv/{name}_{target}_day.{exten}")
+        run_dir = os.getenv('RUN_DIR')
+        dialy.to_csv(f"{run_dir}/csv/{name}_{target}_day.{exten}")
 
 
 def getT2product(dfT2, dfTSK, awsname, param):
@@ -126,8 +129,9 @@ def getT2product(dfT2, dfTSK, awsname, param):
 
 def genT2P(target: str):
     # Open generated CSV
-    data_T0_file = 'data/csv/GFS_zonas_T0_all.csv'
-    data_T2_file = 'data/csv/GFS_zonas_T2_all.csv'
+    run_dir = os.getenv('RUN_DIR')
+    data_T0_file = f'{run_dir}/csv/GFS_zonas_T0_all.csv'
+    data_T2_file = f'{run_dir}/csv/GFS_zonas_T2_all.csv'
     data_T0 = pd.read_csv(data_T0_file, header=None)
     data_T2 = pd.read_csv(data_T2_file, header=None)
 
@@ -151,8 +155,7 @@ def genT2P(target: str):
         zona_T2 = zona_T2.sort_values(by='date')
 
         data = getT2product(zona_T2, zona_T0, zona, 'T2P')
-
-        file_out = 'data/csv/GFS_zonas_T2P.csv'
+        file_out = f'{run_dir}/csv/GFS_zonas_T2P.csv'
         data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
 
 

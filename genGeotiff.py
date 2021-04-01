@@ -143,12 +143,12 @@ def transformGrib(filename: str):
         datetime_run = datetime_base + timedelta(0, seconds_run)
         run = datetime_run.strftime('%H')
         datetimetiff = datetime_base + timedelta(0, seconds)
+        run_dir = os.getenv('RUN_DIR')
         tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
-        path = (f"geotiff/{datetime_run.strftime('%Y_%m')}/"
-                f"{datetime_run.strftime('%d')}_{run}")
+        path = (f"{run_dir}/geotiff")
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         pathfile = f"{path}/{tiffname}"
-
+        print(f"Saving {pathfile}")
         # WRITE GIFF
         nw_ds = rasterio.open(pathfile, 'w', driver='GTiff',
                               height=grid.RasterYSize,

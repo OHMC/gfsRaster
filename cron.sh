@@ -30,16 +30,20 @@ while getopts ':hf:' option; do
 done
 shift $((OPTIND-1))
 
+source env.sh
 
+mkdir -p ${RUN_DIR}
+mkdir -p ${RUN_DIR}/GFS
+mkdir -p ${RUN_DIR}/geotiff
+mkdir -p ${RUN_DIR}/csv
 
+ray start --head --port=6380 --num-cpus=4
 
-BASE='/opt/data/rasters/'
+time python descarga_GFS025.py --ini ${RUNDATE} --out ${RUN_DIR}/GFS/ --model gfs --nhours ${NHOURS} 
 
-DAY=$(date -d "$D" '+%d')
-MONTH=$(date -d "$D" '+%m')
-YEAR=$(date -d "$D" '+%Y')
+time python genGeotiff.py --path "${RUN_DIR}/GFS/GFS*.grib2"
 
-OPDIR=${BASEDIR}${YEAR}_${MONTH}/
+time python geotiffToBasins.py --path "${RUN_DIR}/geotiff/GFS_*_T*.tiff" --target "zonas" --shapefile shapefiles/Zonas_Cobertura.shp
 
-mkdir -p ${OPDIR}
+ray stop
 
