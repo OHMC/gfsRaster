@@ -4,6 +4,7 @@ import numpy as np
 import ray
 import glob
 import argparse
+import os
 from rasterstats import zonal_stats
 from datetime import datetime
 
