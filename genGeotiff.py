@@ -63,7 +63,7 @@ def getGeoT(extent, nlines, ncols):
     return [extent[0], resx, 0, extent[3], 0, -resy]
 
 
-# @ray.remote
+@ray.remote
 def transformGrib(filename: str):
     print(f"Processing: {filename}")
     model, date, member = getInfo(filename)
@@ -182,10 +182,10 @@ def main():
     # 'data/GFS/*.grib2'
     filelist = getList(args.path)
     filelist.sort()
-    it = ray.util.iter.from_items(filelist, num_shards=4)
 
-    for filename in it.gather_async():
-        transformGrib(filename)
+    it = ray.util.iter.from_items(filelist, num_shards=4)
+    proc = [transformGrib.remote(filename) for filename in it.gather_async()]
+    ray.get(proc)
 
 
 if __name__ == "__main__":
