@@ -134,3 +134,4 @@ output/*
 .vscode/
 *.csv
 *.png
+env.sh
