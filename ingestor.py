@@ -2,10 +2,12 @@ import requests
 import argparse
 import pandas as pd
 from datetime import datetime
-from config.constants import gfs_info, base_url, headers
+from config.constants import gfs_info, base_url, token
 
 
 def buildList(gfs_t2p: pd.DataFrame, aws_zones: list):
+    headers = {'Authorization': 'Token ' + token}
+    # Build List for ingestion
     for aws in aws_zones:
         temp = gfs_t2p.loc[gfs_t2p['zona'] == aws['nombre']]
         temp = temp.sort_values('date')
@@ -32,6 +34,7 @@ def buildList(gfs_t2p: pd.DataFrame, aws_zones: list):
 
 
 def getT2P(path: str):
+    # Get T2P from a csv file
     gfs_t2p = pd.read_csv(path, header=None, encoding='utf-8')
     gfs_t2p['T2P'] = gfs_t2p[1]
     gfs_t2p['date'] = pd.to_datetime(gfs_t2p[2])
@@ -43,6 +46,7 @@ def getT2P(path: str):
 
 def getAWS_Zonal():
     # get full list
+    headers = {'Authorization': 'Token ' + token}
     url = base_url + 'estaciones/'
     response = requests.get(url, headers=headers).json()
     aws_list = response['aws_list']
@@ -53,11 +57,14 @@ def getAWS_Zonal():
     for estacion in aws_list:
         if estacion['metadata']['red'] == 'EPEC':
             aws_zones.append(estacion)
+        if estacion['id'] == '300000000000000000367':
+            aws_zones.append(estacion)
 
     return aws_zones
 
 
 def ingestor(path: str):
+    # path: A csv with weather data
     aws_zones = getAWS_Zonal()
     gfs_t2p = getT2P(path)
     buildList(gfs_t2p, aws_zones)
@@ -65,9 +72,8 @@ def ingestor(path: str):
 
 def main():
     parser = argparse.ArgumentParser(
-                description='ingestor.py --path=data/GEFS/*.grib2',
-                epilog="Convert  all grib2 files stored in path folder \
-                        to a raster in geoTiff format")
+                description='ingestor.py --path=path/to/csv/file',
+                epilog="Ingest csv")
 
     parser.add_argument("--path", type=str, dest="path",
                         help="folder with csv to ingest", required=True)
