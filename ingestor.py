@@ -57,6 +57,8 @@ def getAWS_Zonal():
     for estacion in aws_list:
         if estacion['metadata']['red'] == 'EPEC':
             aws_zones.append(estacion)
+        if estacion['id'] == '300000000000000000367':
+            aws_zones.append(estacion)
 
     return aws_zones
 
