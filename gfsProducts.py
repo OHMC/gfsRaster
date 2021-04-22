@@ -5,10 +5,20 @@ import ray
 import glob
 import argparse
 import os
+import re
 from rasterstats import zonal_stats
 from datetime import datetime
 
 ray.init(address='localhost:6380', _redis_password='5241590000000000')
+
+
+def filterByTarget(filelist: list, target: str):
+    if target == "cuencas":
+        match_dir = re.compile('.*GFS_None_ACPC.*')
+    if target == "zonas":
+        match_dir = re.compile('.*GFS_None_(T0|T2|VGRD|UGRD).*')
+
+    return [s for s in filelist if match_dir.match(s)]
 
 
 def getInfo(filename: str):
@@ -27,6 +37,8 @@ def getInfo(filename: str):
 
 
 def getList(regex: str):
+    regex = regex + '/*'
+    print(f"finding: {regex}")
     return glob.glob(regex, recursive=True)
 
 
@@ -172,6 +184,7 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         proc = [zonalEpec.remote(filename, shapefile, target) for filename in it.gather_async()]
         ray.get(proc)
         genT2P(target)
+        # genWind()
     #    print(f"Processing {filename}")
     #    processGiff.remote(filename, shapefile)
 
@@ -181,7 +194,11 @@ def geotiffToBasisns(regex: str, shapefile: str, target: str):
     if not filelist:
         print("ERROR: No geotiff files matched")
         return
-    getBasisns(filelist, shapefile, target)
+    filteredList = filterByTarget(filelist, target)
+    if not filelist:
+        print(f"ERROR: No bariables for {target}")
+        return
+    getBasisns(filteredList, shapefile, target)
 
 
 def main():
@@ -189,13 +206,12 @@ def main():
     # shapefile = "../../wrf-cuenca/src/shapefiles/cuencas_hidro_new.shp"
 
     parser = argparse.ArgumentParser(
-                description=('geotiffToBasins.py --path=geotiff/GEFS*.tiff '
+                description=('gfsProducts.py --path=geotiff/GEFS*.tiff '
                              '--shapefile=shapefiles/basisn.shp'),
-                epilog="Convert  all grib2 files stored in path folder \
-                        to a raster in geoTiff format")
+                epilog="Extract info from rasters")
 
     parser.add_argument("--path", type=str, dest="path",
-                        help="folder with geoti", required=True)
+                        help="folder with gtiff files", required=True)
 
     parser.add_argument("--target", type=str, dest="target",
                         help="zonas or basins", required=True)
