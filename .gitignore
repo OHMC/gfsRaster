@@ -135,3 +135,4 @@ output/*
 *.csv
 *.png
 env.sh
+temp/*
