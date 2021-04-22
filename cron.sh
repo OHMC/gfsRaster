@@ -32,18 +32,24 @@ shift $((OPTIND-1))
 
 source env.sh
 
+source ~/.bashrc
+
 mkdir -p ${RUN_DIR}
 mkdir -p ${RUN_DIR}/GFS
 mkdir -p ${RUN_DIR}/geotiff
 mkdir -p ${RUN_DIR}/csv
+mkdir -p ${RUN_DIR}/log
 
-ray start --head --port=6380 --num-cpus=4
 
-time python descarga_GFS025.py --ini ${RUNDATE} --out ${RUN_DIR}/GFS/ --model gfs --nhours ${NHOURS} 
+~/.pyenv/versions/3.8.0/bin/ray start --head --port=6380 --num-cpus=4
 
-time python genGeotiff.py --path "${RUN_DIR}/GFS/GFS*.grib2"
+time ~/.pyenv/versions/3.8.0/bin/python3 descarga_GFS025.py --ini ${RUNDATE} --out ${RUN_DIR}/GFS/ --model gfs --nhours ${NHOURS} > ${RUN_DIR}/log/descarga.log 2>&1
 
-time python geotiffToBasins.py --path "${RUN_DIR}/geotiff/GFS_*_T*.tiff" --target "zonas" --shapefile shapefiles/Zonas_Cobertura.shp
+time ~/.pyenv/versions/3.8.0/bin/python3 genGeotiff.py --path "${RUN_DIR}/GFS/GFS*.grib2" > ${RUN_DIR}/log/gen.log 2>&1
 
-ray stop
+time ~/.pyenv/versions/3.8.0/bin/python3 geotiffToBasins.py --path "${RUN_DIR}/geotiff/GFS_*_T*.tiff" --target "zonas" --shapefile shapefiles/Zonas_Cobertura.shp  > ${RUN_DIR}/log/geo.log 2>&1
+
+time ~/.pyenv/versions/3.8.0/bin/python3 ingestor.py --path ${RUN_DIR}/csv/GFS_zonas_T2P.csv > ${RUN_DIR}/log/ingestor.log 2>&1
+
+~/.pyenv/versions/3.8.0/bin/ray stop
 

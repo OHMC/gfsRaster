@@ -136,3 +136,4 @@ output/*
 *.png
 env.sh
 temp/*
+pickles/*
