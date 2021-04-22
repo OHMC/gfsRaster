@@ -38,7 +38,6 @@ def getInfo(filename: str):
 
 def getList(regex: str):
     regex = regex + '/*'
-    print(f"finding: {regex}")
     return glob.glob(regex, recursive=True)
 
 
