@@ -24,9 +24,11 @@ def getPpnBand(grib):
     dictVar = {}
     for band in range(1, grib.RasterCount + 1):
         var = grib.GetRasterBand(band)
-
+        if var.GetMetadata()['GRIB_ELEMENT'] in ("UGRD"):
+            dictVar[int(band)] = "UGRD"
+        if var.GetMetadata()['GRIB_ELEMENT'] in ("VGRD"):
+            dictVar[int(band)] = "VGRD"
         if var.GetMetadata()['GRIB_ELEMENT'] in ("APCP03", "APCP06"):
-            # print(f"Total precipitation is band {band}
             dictVar[int(band)] = "ACPC"
         if var.GetMetadata()['GRIB_ELEMENT'] in ("TMP"):
             if var.GetMetadata()['GRIB_SHORT_NAME'] in ("2-HTGL"):
@@ -138,10 +140,10 @@ def transformGrib(filename: str):
 
         # Build filename
         seconds = int(bandGrid.GetMetadata()['GRIB_VALID_TIME'][2:12])
-        seconds_run = int(bandGrid.GetMetadata()['GRIB_REF_TIME'][2:12])
+        # seconds_run = int(bandGrid.GetMetadata()['GRIB_REF_TIME'][2:12])
         datetime_base = datetime(1970, 1, 1, 0, 0)
-        datetime_run = datetime_base + timedelta(0, seconds_run)
-        run = datetime_run.strftime('%H')
+        # datetime_run = datetime_base + timedelta(0, seconds_run)
+        # run = datetime_run.strftime('%H')
         datetimetiff = datetime_base + timedelta(0, seconds)
         run_dir = os.getenv('RUN_DIR')
         tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
