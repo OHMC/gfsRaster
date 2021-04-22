@@ -172,6 +172,47 @@ def genT2P(target: str):
         data.to_csv(file_out, mode='a', header=None, encoding='utf-8')
 
 
+def genWind():
+    # Open generated CSV
+    run_dir = os.getenv('RUN_DIR')
+    file_spd = f'{run_dir}/csv/GFS_zonas_wspd.csv'
+    file_wdir = f'{run_dir}/csv/GFS_zonas_wdir.csv'
+    data_U_file = f'{run_dir}/csv/GFS_zonas_UGRD_all.csv'
+    data_V_file = f'{run_dir}/csv/GFS_zonas_VGRD_all.csv'
+    data_U = pd.read_csv(data_U_file, header=None)
+    data_V = pd.read_csv(data_V_file, header=None)
+
+    data_U["name"] = data_U[1]
+    data_U["mean"] = data_U[2]
+    data_U["date"] = pd.to_datetime(data_U[3])
+    data_U = data_U[['name', 'mean', 'date']]
+    data_V["name"] = data_V[1]
+    data_V["mean"] = data_V[2]
+    data_V["date"] = pd.to_datetime(data_V[3])
+    data_V = data_V[['name', 'mean', 'date']]
+
+    # Get unique values of zones
+    zonas = data_U.name.unique()
+
+    for zona in zonas:
+        zona_U = data_U.loc[data_U['name'] == zonas[0]]
+        zona_V = data_V.loc[data_V['name'] == zonas[0]]
+
+        WDIR = (270-np.rad2deg(np.arctan2(zona_V['mean'],zona_U['mean'])))%360
+        WSPD = np.sqrt(np.square(zona_V['mean'])+np.square(zona_U['mean']))
+
+        zona_wspd = zona_V[['name', 'date']]
+        zona_wdir = zona_V[['name', 'date']]
+        zona_wdir.loc[:, 'wdir'] = WDIR.values
+        zona_wspd.loc[:, 'wspd'] = WSPD.values
+
+        zona_wdir.sort_index(inplace=True)
+        zona_wspd.sort_index(inplace=True)
+
+        zona_wspd.to_csv(file_spd, mode='a', header=None, encoding='utf-8')
+        zona_wdir.to_csv(file_wdir, mode='a', header=None, encoding='utf-8')
+
+
 def getBasisns(filelist: list, shapefile: str, target: str):
 
     filelist.sort()
@@ -184,7 +225,7 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         proc = [zonalEpec.remote(filename, shapefile, target) for filename in it.gather_async()]
         ray.get(proc)
         genT2P(target)
-        # genWind()
+        genWind()
     #    print(f"Processing {filename}")
     #    processGiff.remote(filename, shapefile)
 
