@@ -62,11 +62,6 @@ def getAWS_Zonal():
     headers = {'Authorization': 'Token ' + token}
     url = base_url + 'estaciones/'
     response = requests.get(url, headers=headers).json()
-    if response.ok:
-        print(response.json())
-    else:
-        print(response.content)
-        return
     aws_list = response['aws_list']
 
     # filter zonal
