@@ -2,22 +2,34 @@ import requests
 import argparse
 import pandas as pd
 from datetime import datetime
-from config.constants import gfs_info, base_url, token
+from config.constants import gfs_info, base_url, token, variables
 
 
-def buildList(gfs_t2p: pd.DataFrame, aws_zones: list):
+def get_config(filename: str):
+    """ Retorna la parametrizacion, la variable y el RUN a partir del nombre del csv """
+
+    filename = filename.split('/')[-1]
+    model, temp = filename.split('_', 1)
+    prod, var = temp.split('_', 1)
+
+    return model, prod, var
+
+
+def buildList(gfs_var: pd.DataFrame, aws_zones: list, var: str):
+
     headers = {'Authorization': 'Token ' + token}
     # Build List for ingestion
     for aws in aws_zones:
-        temp = gfs_t2p.loc[gfs_t2p['zona'] == aws['nombre']]
+        temp = gfs_var.loc[gfs_var['zona'] == aws['nombre']]
         temp = temp.sort_values('date')
         uid = aws['id']
+
         # AAAAMMDDTHHMMSSZ
         registers_list = []
         i = 0
         for line in temp.iterrows():
             dict = {'fecha': datetime.strftime(line[1]['date'], '%Y%m%dT%H%M%SZ'),
-                    'gfs_mean_region_temperature': {'data': line[1]['T2P'], 'forecast': i, 'info': gfs_info}
+                    variables[var]: {'data': line[1][var], 'forecast': i, 'info': gfs_info}
                     }
             i = i + 3
             registers_list.append(dict)
@@ -33,15 +45,16 @@ def buildList(gfs_t2p: pd.DataFrame, aws_zones: list):
             print(response.content)
 
 
-def getT2P(path: str):
-    # Get T2P from a csv file
-    gfs_t2p = pd.read_csv(path, header=None, encoding='utf-8')
-    gfs_t2p['T2P'] = gfs_t2p[1]
-    gfs_t2p['date'] = pd.to_datetime(gfs_t2p[2])
-    gfs_t2p['zona'] = gfs_t2p[3]
-    gfs_t2p = gfs_t2p[['date', 'T2P', 'zona']]
+def getCsvVar(path: str, var: str):
+    # 'name', 'mean', 'date'
+    # logger.info(f"Opening: {path}")
+    gfs_var = pd.read_csv(path, header=None, encoding='utf-8')
+    gfs_var[f'{var}'] = gfs_var[2]
+    gfs_var['date'] = pd.to_datetime(gfs_var[2])
+    gfs_var['zona'] = gfs_var[1]
+    gfs_var = gfs_var[['date', f'{var}', 'zona']]
 
-    return gfs_t2p
+    return gfs_var
 
 
 def getAWS_Zonal():
@@ -64,10 +77,11 @@ def getAWS_Zonal():
 
 
 def ingestor(path: str):
+    model, prod, var = get_config(path)
     # path: A csv with weather data
     aws_zones = getAWS_Zonal()
-    gfs_t2p = getT2P(path)
-    buildList(gfs_t2p, aws_zones)
+    gfs_var = getCsvVar(path)
+    buildList(gfs_var, aws_zones, var)
 
 
 def main():
