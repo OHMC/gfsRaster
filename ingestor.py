@@ -62,6 +62,11 @@ def getAWS_Zonal():
     headers = {'Authorization': 'Token ' + token}
     url = base_url + 'estaciones/'
     response = requests.get(url, headers=headers).json()
+    if response.ok:
+        print(response.json())
+    else:
+        print(response.content)
+        return
     aws_list = response['aws_list']
 
     # filter zonal
@@ -80,7 +85,7 @@ def ingestor(path: str):
     model, prod, var = get_config(path)
     # path: A csv with weather data
     aws_zones = getAWS_Zonal()
-    gfs_var = getCsvVar(path)
+    gfs_var = getCsvVar(path, var)
     buildList(gfs_var, aws_zones, var)
 
 
