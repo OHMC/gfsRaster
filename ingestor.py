@@ -10,7 +10,8 @@ def get_config(filename: str):
 
     filename = filename.split('/')[-1]
     model, temp = filename.split('_', 1)
-    prod, var = temp.split('_', 1)
+    prod, temp = temp.split('_', 1)
+    var, extension = temp.split('.', 1)
 
     return model, prod, var
 
