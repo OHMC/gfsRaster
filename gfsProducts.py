@@ -195,8 +195,8 @@ def genWind():
     zonas = data_U.name.unique()
 
     for zona in zonas:
-        zona_U = data_U.loc[data_U['name'] == zonas[0]]
-        zona_V = data_V.loc[data_V['name'] == zonas[0]]
+        zona_U = data_U.loc[data_U['name'] == zona]
+        zona_V = data_V.loc[data_V['name'] == zona]
 
         WDIR = (270-np.rad2deg(np.arctan2(zona_V['mean'], zona_U['mean'])))%360
         WSPD = np.sqrt(np.square(zona_V['mean'])+np.square(zona_U['mean']))
