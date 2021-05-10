@@ -38,7 +38,8 @@ def buildList(gfs_var: pd.DataFrame, aws_zones: list, var: str):
         # post vía apirest
         json_ = {'id': uid, 'lista_registros': registers_list,
                  'usa_claves': True, 'replace_existing': True}
-
+        print(f"POST: {base_url}datos/")
+        print(f"json: {json_}")
         response = requests.post(base_url+'datos/', headers=headers, json=json_)
         if response.ok:
             print(response.json())
