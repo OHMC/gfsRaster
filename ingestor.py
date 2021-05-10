@@ -30,7 +30,7 @@ def buildList(gfs_var: pd.DataFrame, aws_zones: list, var: str):
         i = 0
         for line in temp.iterrows():
             dict = {'fecha': datetime.strftime(line[1]['date'], '%Y%m%dT%H%M%SZ'),
-                    variables[var]: {'data': line[2][var], 'forecast': i, 'info': gfs_info}
+                    variables[var]: {'data': line[1][var], 'forecast': i, 'info': gfs_info}
                     }
             i = i + 3
             registers_list.append(dict)
@@ -51,7 +51,7 @@ def getCsvVar(path: str, var: str):
     # 'name', 'mean', 'date'
     # logger.info(f"Opening: {path}")
     gfs_var = pd.read_csv(path, header=None, encoding='utf-8')
-    gfs_var[f'{var}'] = gfs_var[2]
+    gfs_var[f'{var}'] = gfs_var[3]
     gfs_var['date'] = pd.to_datetime(gfs_var[2])
     gfs_var['zona'] = gfs_var[1]
     gfs_var = gfs_var[['date', f'{var}', 'zona']]
