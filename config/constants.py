@@ -3,7 +3,7 @@ import os
 verbose = False
 debug = False
 
-base_url = 'https://bdhm.ohmc.ar/api/'
+base_url = 'https://bdhm.ohmc.com.ar/api/'
 
 token = os.getenv('TOKEN')
 usr = os.getenv('USER')

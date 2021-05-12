@@ -47,9 +47,13 @@ time ~/.pyenv/versions/3.8.0/bin/python3 descarga_GFS025.py --ini ${RUNDATE} --o
 
 time ~/.pyenv/versions/3.8.0/bin/python3 genGeotiff.py --path "${RUN_DIR}/GFS/GFS*.grib2" > ${RUN_DIR}/log/gen.log 2>&1
 
-time ~/.pyenv/versions/3.8.0/bin/python3 gfsProducts.py --path "${RUN_DIR}/geotiff" --target "zonas" --shapefile shapefiles/Zonas_Cobertura.shp  > ${RUN_DIR}/log/geo.log 2>&1
+time ~/.pyenv/versions/3.8.0/bin/python3 gfsProducts.py --path "${RUN_DIR}/geotiff" --target "zonas" --shapefile shapefiles/Zonas_Cobertura_Cuidades.shp  > ${RUN_DIR}/log/geo.log 2>&1
 
-time ~/.pyenv/versions/3.8.0/bin/python3 ingestor.py --path ${RUN_DIR}/csv/GFS_zonas_T2P.csv > ${RUN_DIR}/log/ingestor.log 2>&1
+time ~/.pyenv/versions/3.8.0/bin/python3 ingestor.py --path ${RUN_DIR}/csv/GFS_zonas_T2P.csv >> ${RUN_DIR}/log/ingestor.log 2>&1
+
+time ~/.pyenv/versions/3.8.0/bin/python3 ingestor.py --path ${RUN_DIR}/csv/GFS_zonas_wspd.csv >> ${RUN_DIR}/log/ingestor.log 2>&1
+
+time ~/.pyenv/versions/3.8.0/bin/python3 ingestor.py --path ${RUN_DIR}/csv/GFS_zonas_wdir.csv >> ${RUN_DIR}/log/ingestor.log 2>&1
 
 ~/.pyenv/versions/3.8.0/bin/ray stop
 
