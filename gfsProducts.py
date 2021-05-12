@@ -217,12 +217,12 @@ def getBasisns(filelist: list, shapefile: str, target: str):
     filelist.sort()
     it = ray.util.iter.from_items(filelist, num_shards=4)
     if target == "cuencas":
-        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
+        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
         proc = [selectBasin.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
         ray.get(proc)
         accumDiario(target)
     elif target == "zonas":
-        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
+        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
         proc = [zonalEpec.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
         ray.get(proc)
         genT2P(target)
