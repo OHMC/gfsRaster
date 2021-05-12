@@ -87,12 +87,12 @@ def selectBasin(filename, shapefile, target, cuencas_gdf):
 
 
 @ray.remote
-def zonalEpec(filename: str, shapefile: str, target: str):
+def zonalEpec(filename: str, shapefile: str, target: str, cuencas_gdf: gpd.GeoDataFrame):
     model, date, pert, var = getInfo(filename)
 
     zonas = pd.DataFrame()
 
-    zonas_gdf = integrate_shapes(filename, shapefile, target)
+    zonas_gdf = integrate_shapes(filename, shapefile, target, cuencas_gdf)
     zonas_gdf = zonas_gdf[['zona', 'mean']]
     zonas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
     zonas = zonas.append(zonas_gdf, ignore_index=True)
@@ -222,7 +222,8 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         ray.get(proc)
         accumDiario(target)
     elif target == "zonas":
-        proc = [zonalEpec.remote(filename, shapefile, target) for filename in it.gather_async()]
+        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
+        proc = [zonalEpec.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
         ray.get(proc)
         genT2P(target)
         genWind()
