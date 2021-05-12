@@ -42,7 +42,7 @@ def getList(regex: str):
 
 
 def integrate_shapes(filename: str, shapefile: str,
-                     target: str) -> gpd.GeoDataFrame:
+                     target: str, cuencas_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     This functions opens a geotiff with desired data, converts to a raster,
     integrate the data into polygons and returns a GeoDataFrame object.
@@ -53,7 +53,6 @@ def integrate_shapes(filename: str, shapefile: str,
         cuencas_gdf_ppn (GeoDataFrame): a geodataframe with cuerncas and ppn
     """
 
-    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
     df_zs = pd.DataFrame(zonal_stats(shapefile, filename, all_touched=True))
 
     cuencas_gdf_ppn = pd.concat([cuencas_gdf,
@@ -72,11 +71,11 @@ def integrate_shapes(filename: str, shapefile: str,
 
 
 @ray.remote
-def selectBasin(filename, shapefile, target):
+def selectBasin(filename, shapefile, target, cuencas_gdf):
     model, date, pert, var = getInfo(filename)
     rioii = pd.DataFrame()
 
-    cuencas_gdf = integrate_shapes(filename, shapefile, target)
+    cuencas_gdf = integrate_shapes(filename, shapefile, target, cuencas_gdf)
     cuencas_gdf = cuencas_gdf.loc[cuencas_gdf["subcuenca"].str.contains('Tercero')]
     cuencas_gdf = cuencas_gdf[['subcuenca', 'mean']]
     cuencas_gdf['date'] = datetime.strptime(filename[-21:-5], "%Y-%m-%dZ%H:%M")
@@ -118,7 +117,7 @@ def accumDiario(target: str):
         filename = filecsv.split('/')[-1]
         name, exten = filename.split('.')
         run_dir = os.getenv('RUN_DIR')
-        dialy.to_csv(f"{run_dir}/csv/{name}_{target}_day.{exten}")
+        dialy.to_csv(f"{run_dir}/csv/{name}_{target}_day.{exten}", encoding='utf-8')
 
 
 def getT2product(dfT2, dfTSK, awsname, param):
@@ -145,8 +144,8 @@ def genT2P(target: str):
     run_dir = os.getenv('RUN_DIR')
     data_T0_file = f'{run_dir}/csv/GFS_zonas_T0_all.csv'
     data_T2_file = f'{run_dir}/csv/GFS_zonas_T2_all.csv'
-    data_T0 = pd.read_csv(data_T0_file, header=None)
-    data_T2 = pd.read_csv(data_T2_file, header=None)
+    data_T0 = pd.read_csv(data_T0_file, header=None,  encoding='utf-8')
+    data_T2 = pd.read_csv(data_T2_file, header=None,  encoding='utf-8')
 
     data_T0["name"] = data_T0[1]
     data_T0["mean"] = data_T0[2]
@@ -218,7 +217,8 @@ def getBasisns(filelist: list, shapefile: str, target: str):
     filelist.sort()
     it = ray.util.iter.from_items(filelist, num_shards=4)
     if target == "cuencas":
-        proc = [selectBasin.remote(filename, shapefile, target) for filename in it.gather_async()]
+        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
+        proc = [selectBasin.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
         ray.get(proc)
         accumDiario(target)
     elif target == "zonas":
