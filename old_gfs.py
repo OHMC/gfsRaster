@@ -3,6 +3,7 @@ import glob
 import pathlib
 import argparse
 import ray
+from pathlib import Path
 from affine import Affine
 from datetime import datetime, timedelta
 from osgeo import osr, gdal
@@ -128,6 +129,23 @@ def transformGrib(filename: str):
                                             grib.RasterYSize,
                                             grib.GetRasterBand(band).ReadRaster())
 
+        # Build filename
+        seconds = int(bandGrid.GetMetadata()['GRIB_VALID_TIME'][2:12])
+        # seconds_run = int(bandGrid.GetMetadata()['GRIB_REF_TIME'][2:12])
+        datetime_base = datetime(1970, 1, 1, 0, 0)
+        # datetime_run = datetime_base + timedelta(0, seconds_run)
+        # run = datetime_run.strftime('%H')
+        datetimetiff = datetime_base + timedelta(0, seconds)
+        tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
+        path = (f"/home/datos/geotiff/{dictVar[band]}")
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+        pathfile = f"{path}/{tiffname}"
+
+        # do not process if the file exist
+        if Path(pathfile).is_file():
+            print("File exist")
+            continue
+
         # Perform the projection/resampling
         gdal.ReprojectImage(
             origin,
@@ -145,17 +163,6 @@ def transformGrib(filename: str):
         geotransform = grid.GetGeoTransform()
         transform = Affine.from_gdal(*geotransform)
 
-        # Build filename
-        seconds = int(bandGrid.GetMetadata()['GRIB_VALID_TIME'][2:12])
-        # seconds_run = int(bandGrid.GetMetadata()['GRIB_REF_TIME'][2:12])
-        datetime_base = datetime(1970, 1, 1, 0, 0)
-        # datetime_run = datetime_base + timedelta(0, seconds_run)
-        # run = datetime_run.strftime('%H')
-        datetimetiff = datetime_base + timedelta(0, seconds)
-        tiffname = f"{model}_{member}_{dictVar[band]}_{datetimetiff.strftime('%Y-%m-%dZ%H:%M')}.tiff"
-        path = (f"/home/datos/geotiff/{dictVar[band]}")
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        pathfile = f"{path}/{tiffname}"
         print(f"Saving {pathfile}")
         # WRITE GIFF
         nw_ds = rasterio.open(pathfile, 'w', driver='GTiff',
