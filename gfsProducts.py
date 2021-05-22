@@ -128,12 +128,12 @@ def zonalEpec(filename: str, shapefile: str, target: str, cuencas_gdf: gpd.GeoDa
 
 
 @ray.remote
-def zonal_sur(filename: str, shapefile: str, target: str, cuencas_gdf: gpd.GeoDataFrame):
+def zonal_sur(filename: str, shapefile: str, cuencas_gdf: gpd.GeoDataFrame):
     model, date, pert, var = getInfo(filename)
 
     zonas = pd.DataFrame()
 
-    zonas_gdf = integrate_shapes_sur(filename, shapefile, target, cuencas_gdf)
+    zonas_gdf = integrate_shapes_sur(filename, shapefile)
     zonas_gdf = zonas_gdf[['NAME', 'data']]
     zonas_gdf['date'] = date
     zonas = zonas.append(zonas_gdf, ignore_index=True)
@@ -269,7 +269,7 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         genWind()
     elif target == "sur":
         cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
-        proc = [zonal_sur.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
+        proc = [zonal_sur.remote(filename, shapefile, cuencas_gdf) for filename in it.gather_async()]
         ray.get(proc)
 
     #    print(f"Processing {filename}")
