@@ -9,7 +9,7 @@ import re
 from rasterstats import zonal_stats, point_query
 from datetime import datetime
 
-ray.init(address='localhost:6380', _redis_password='5241590000000000')
+ray.init(address='auto', _redis_password='5241590000000000')
 
 
 def filterByTarget(filelist: list, target: str):
