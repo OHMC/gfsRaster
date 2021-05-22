@@ -6,7 +6,7 @@ import glob
 import argparse
 import os
 import re
-from rasterstats import zonal_stats
+from rasterstats import zonal_stats, point_query
 from datetime import datetime
 
 ray.init(address='localhost:6380', _redis_password='5241590000000000')
@@ -17,6 +17,8 @@ def filterByTarget(filelist: list, target: str):
         match_dir = re.compile('.*GFS_None_ACPC.*')
     if target == "zonas":
         match_dir = re.compile('.*GFS_None_(T0|T2|VGRD|UGRD).*')
+    if target == "sur":
+        match_dir = re.compile('.*GFS_None_(V10|U10).*')
 
     return [s for s in filelist if match_dir.match(s)]
 
@@ -70,6 +72,29 @@ def integrate_shapes(filename: str, shapefile: str,
     return None
 
 
+def integrate_shapes_sur(filename: str, shapefile: str) -> gpd.GeoDataFrame:
+    """
+    This functions opens a geotiff with desired data, converts to a raster,
+    integrate the data into polygons and returns a GeoDataFrame object.
+
+    Parameters:
+        cuencas_shp: Path to shapefile
+    Returns:
+        cuencas_gdf_ppn (GeoDataFrame): a geodataframe with cuerncas and ppn
+    """
+
+    cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile, encoding='utf-8')
+    df_zs = pd.DataFrame(point_query(shapefile, filename))
+
+    cuencas_gdf_ppn = pd.concat([cuencas_gdf, df_zs], axis=1)
+
+    COLUM_REPLACE = {0: 'data'}
+
+    cuencas_gdf_ppn = cuencas_gdf_ppn.rename(columns=COLUM_REPLACE)
+
+    return cuencas_gdf_ppn[['NAME', 'geometry', 'data']]
+
+
 @ray.remote
 def selectBasin(filename, shapefile, target, cuencas_gdf):
     model, date, pert, var = getInfo(filename)
@@ -98,6 +123,21 @@ def zonalEpec(filename: str, shapefile: str, target: str, cuencas_gdf: gpd.GeoDa
     zonas = zonas.append(zonas_gdf, ignore_index=True)
     run_dir = os.getenv('RUN_DIR')
     filename = f"{run_dir}/csv/{model}_{target}_{var}_all.csv"
+    print(f"Saving in {filename}")
+    zonas.to_csv(filename, mode='a', header=False, encoding='utf-8')
+
+
+@ray.remote
+def zonal_sur(filename: str, shapefile: str, target: str, cuencas_gdf: gpd.GeoDataFrame):
+    model, date, pert, var = getInfo(filename)
+
+    zonas = pd.DataFrame()
+
+    zonas_gdf = integrate_shapes_sur(filename, shapefile, target, cuencas_gdf)
+    zonas_gdf = zonas_gdf[['NAME', 'data']]
+    zonas_gdf['date'] = date
+    zonas = zonas.append(zonas_gdf, ignore_index=True)
+    filename = f"csv/{var}.csv"
     print(f"Saving in {filename}")
     zonas.to_csv(filename, mode='a', header=False, encoding='utf-8')
 
@@ -227,6 +267,11 @@ def getBasisns(filelist: list, shapefile: str, target: str):
         ray.get(proc)
         genT2P(target)
         genWind()
+    elif target == "sur":
+        cuencas_gdf: gpd.GeoDataFrame = gpd.read_file(shapefile)
+        proc = [zonal_sur.remote(filename, shapefile, target, cuencas_gdf) for filename in it.gather_async()]
+        ray.get(proc)
+
     #    print(f"Processing {filename}")
     #    processGiff.remote(filename, shapefile)
 
@@ -237,7 +282,7 @@ def geotiffToBasisns(regex: str, shapefile: str, target: str):
         print("ERROR: No geotiff files matched")
         return
     filteredList = filterByTarget(filelist, target)
-    if not filelist:
+    if not filteredList:
         print(f"ERROR: No bariables for {target}")
         return
     getBasisns(filteredList, shapefile, target)
@@ -256,7 +301,7 @@ def main():
                         help="folder with gtiff files", required=True)
 
     parser.add_argument("--target", type=str, dest="target",
-                        help="zonas or basins", required=True)
+                        help="zonas or basins or sur", required=True)
 
     parser.add_argument("--shapefile", type=str, dest="shapefile",
                         help="if it's gfs or gefs", required=True)
